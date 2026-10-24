@@ -29,6 +29,19 @@ export const listProjectUiFiles = (root: string): readonly string[] => {
   return out;
 };
 
+/**
+ * 从「磁盘上存在的 .ui」里扣掉已 import 的与显式豁免的，剩下的就是孤儿。
+ *
+ * `exclude` 用来表达「这个文件有意不接线」（如 ui-demo 的 `ui/widgets.ui` 只给离线
+ * `ui.check` / `preview` 用）。路径口径与 `listProjectUiFiles` 一致：相对项目根、`/` 分隔。
+ */
+export const filterOrphans = (
+  discovered: readonly string[],
+  transformed: ReadonlySet<string>,
+  exclude: readonly string[] = [],
+): readonly string[] =>
+  discovered.filter((file) => !transformed.has(file) && !exclude.includes(file));
+
 /** 中文报错：哪些 .ui 存在但构建没碰到（没被 import）。 */
 export const formatOrphanUiError = (orphans: readonly string[]): string =>
   [

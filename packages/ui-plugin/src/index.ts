@@ -12,7 +12,7 @@ import type { Plugin } from 'vite';
 import { compileUi } from './compile';
 import type { CompileOptions } from './compile';
 import type { ComponentRegistry } from '../../runtime/src/core/ui/components';
-import { formatOrphanUiError, listProjectUiFiles } from './orphan-ui';
+import { filterOrphans, formatOrphanUiError, listProjectUiFiles } from './orphan-ui';
 
 export interface UiPluginOptions extends CompileOptions {
   /** 只编译这些路径下的 `.ui`；默认全部 */
@@ -22,6 +22,11 @@ export interface UiPluginOptions extends CompileOptions {
    * 默认 true；dev 热更新不拦（只在 `command === 'build'` 时检查）。
    */
   readonly checkOrphans?: boolean;
+  /**
+   * 有意不接线的 `.ui`（相对项目根、`/` 分隔），跳过孤儿检查。
+   * 例：`games/ui-demo/ui/widgets.ui` 是组件库 demo，只给离线 `ui.check` / `preview` 用。
+   */
+  readonly orphanExclude?: readonly string[];
 }
 
 /**
@@ -63,7 +68,7 @@ export const uiPlugin = (options: UiPluginOptions = {}): Plugin => {
     buildEnd() {
       if (!isBuild || options.checkOrphans === false) return;
       const discovered = listProjectUiFiles(root);
-      const orphans = discovered.filter((file) => !transformed.has(file));
+      const orphans = filterOrphans(discovered, transformed, options.orphanExclude);
       if (orphans.length > 0) this.error(`\n${formatOrphanUiError(orphans)}\n`);
     },
   };

@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { formatOrphanUiError, listProjectUiFiles } from './orphan-ui';
+import { filterOrphans, formatOrphanUiError, listProjectUiFiles } from './orphan-ui';
 
 const made: string[] = [];
 afterEach(() => {
@@ -26,5 +26,22 @@ describe('formatOrphanUiError', () => {
     const text = formatOrphanUiError(['ui/a.ui', 'ui/b.ui']);
     expect(text).toContain('ui/a.ui');
     expect(text).toContain('bindComponents');
+  });
+});
+
+describe('filterOrphans', () => {
+  const discovered = ['ui/a.ui', 'ui/b.ui', 'ui/widgets.ui'];
+
+  it('扣掉已被 import 的', () => {
+    expect(filterOrphans(discovered, new Set(['ui/a.ui']))).toEqual(['ui/b.ui', 'ui/widgets.ui']);
+  });
+
+  it('扣掉显式豁免的（有意不接线）', () => {
+    expect(filterOrphans(discovered, new Set(['ui/a.ui']), ['ui/widgets.ui'])).toEqual(['ui/b.ui']);
+  });
+
+  it('豁免清单为空时与不传等价（不误伤正常孤儿）', () => {
+    expect(filterOrphans(discovered, new Set<string>())).toEqual(discovered);
+    expect(filterOrphans(discovered, new Set<string>(), [])).toEqual(discovered);
   });
 });
