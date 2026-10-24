@@ -8,6 +8,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 ![Vitest](https://img.shields.io/badge/test-vitest-6E9F18?logo=vitest&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-3DA639)
 
 ---
 
@@ -124,6 +125,10 @@ docs/            文档
 - **根 `pnpm -w test` 不覆盖 `games/`** —— 只跑 `packages/**` 与 `templates/**`。新游戏自己的测试要在游戏目录内跑
 - **`pnpm verify-platform` 需要真实浏览器** —— 在受限沙箱里 Chrome 的 crashpad 会启动即自杀，必须在有完整进程权限的环境下跑
 - **小游戏不支持 `import()` 动态导入与代码分割**，资源也不能交给 Vite 的 asset 管线
+
+## 许可证
+
+[MIT](LICENSE)
 
 ## 状态
 
