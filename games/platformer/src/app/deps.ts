@@ -14,6 +14,9 @@ export { createPhysicsWorld } from '../../../../packages/physics-2d/src/index';
 export { bindComponents } from '../../../../packages/runtime/src/core/ui/bind';
 export { layout } from '../../../../packages/runtime/src/core/ui/layout';
 export { DEFAULT_THEME } from '../../../../packages/runtime/src/core/ui/components';
+// 自定义组件用的工厂与绘制工具（T80：触屏按键）
+export { boolProp, defineComponent, stringProp } from '../../../../packages/runtime/src/core/ui/components';
+export { drawCenteredText } from '../../../../packages/runtime/src/core/ui/builtin-draw';
 
 // 多点按压（T48）：UI 按钮语义用 press.ts（单指针独占），游戏虚拟按键用 multi-press
 // （每个 pointerId 独立绑定、互不打断 —— 这修的就是「按住左再按跳，左被打断」）

@@ -9,6 +9,11 @@
  *
  * 纯函数：输入 `旧状态 + 一个事件 → 新状态`；不碰 canvas、无全局状态、不改入参。
  * 失效绑定（手指滑出按钮 / 元素消失 / pointercancel）由 multi-press 自己解绑。
+ *
+ * T80：按键命中表不再写死坐标。旧实现用 `TOUCH_ENTRIES`（来自 `render.ts` 的
+ * 390×844 绝对矩形），画与点虽然同源但都不随视口变化，窄画框里按钮直接跑到画布外。
+ * 现在由 `setEntries()` 每帧从 `.ui` 的 layout 结果喂进来（`ui.ts` 的 `touchEntriesOf`），
+ * 键盘那一路完全不受影响。
  */
 
 import {
@@ -20,23 +25,12 @@ import {
   pressedNames,
 } from './deps';
 import type { HitEntry, HitPoint, MultiPressState } from './deps';
-import { TOUCH } from './render';
 
 /** 三个动作键（与键盘映射、触屏按钮同名）。 */
 export type ActionKey = 'left' | 'right' | 'jump';
 
 /** 固定顺序：键盘 / 触屏事件都按这个顺序同步，行为可复现。 */
 export const ACTION_KEYS: readonly ActionKey[] = ['left', 'right', 'jump'];
-
-/**
- * 触屏按钮命中表：矩形与 `render.ts` 画出来的同源（都用 `TOUCH`），
- * 不会出现「画的位置和点的位置错开」。
- */
-export const TOUCH_ENTRIES: readonly HitEntry[] = [
-  { name: 'left', rect: TOUCH.left, hit: 'self', layer: 0, index: 0 },
-  { name: 'right', rect: TOUCH.right, hit: 'self', layer: 0, index: 1 },
-  { name: 'jump', rect: TOUCH.jump, hit: 'self', layer: 0, index: 2 },
-];
 
 /** 一路输入的两个来源：键盘按住的键 + 触屏每根手指绑定的按钮。 */
 export interface InputState {
@@ -63,6 +57,9 @@ const CANCEL_POINT: HitPoint = { x: Number.NaN, y: Number.NaN };
  * 触屏 pointer 事件：down 绑定这一根手指，move 滑出就解绑这一根，
  * up / cancel 解绑这一根并（up 时）丢弃激活结果 —— 这里只关心「还按着哪些键」。
  *
+ * `entries` 是当前帧的按键命中表（`.ui` layout 出来的矩形）。传空表时触屏一律不响应，
+ * 所以首帧还没算出布局时不会误判。
+ *
  * 关键：**任何一条分支都只影响 `event.pointer.id` 对应的绑定**，其他手指的绑定
  * 原样保留，所以「松开跳键」不会松开左键。
  */
@@ -71,14 +68,16 @@ export const withPointer = (
   kind: 'down' | 'move' | 'up' | 'cancel',
   point: HitPoint,
   pointerId: number,
+  entries: readonly HitEntry[],
 ): InputState => {
-  if (kind === 'down') return withTouch(state, multiDown(state.touch, TOUCH_ENTRIES, point, pointerId));
-  if (kind === 'move') return withTouch(state, multiMove(state.touch, TOUCH_ENTRIES, point, pointerId));
+  if (entries.length === 0) return state;
+  if (kind === 'down') return withTouch(state, multiDown(state.touch, entries, point, pointerId));
+  if (kind === 'move') return withTouch(state, multiMove(state.touch, entries, point, pointerId));
   if (kind === 'up') {
-    return withTouch(state, multiUp(state.touch, TOUCH_ENTRIES, point, pointerId).state);
+    return withTouch(state, multiUp(state.touch, entries, point, pointerId).state);
   }
   // cancel：指针状态不明 → 只解绑这一根手指，不给激活（NaN 点 = 停在原处也不算）
-  return withTouch(state, multiUp(state.touch, TOUCH_ENTRIES, CANCEL_POINT, pointerId).state);
+  return withTouch(state, multiUp(state.touch, entries, CANCEL_POINT, pointerId).state);
 };
 
 const withTouch = (state: InputState, touch: MultiPressState): InputState =>
@@ -111,6 +110,8 @@ export interface InputController {
   readonly effective: Readonly<Record<ActionKey, boolean>>;
   /** 当前被手指按着的触屏按钮名（调试快照用）。 */
   readonly pressedTouch: readonly string[];
+  /** 更新触屏按键命中表（每帧从 `.ui` 的矩形派生）。 */
+  setEntries(entries: readonly HitEntry[]): void;
   /** 键盘按下 / 松开（which 已由调用方从物理键映射好）。 */
   handleKey(which: ActionKey, down: boolean): void;
   /** 单根指针的 down / move / up / cancel。 */
@@ -126,6 +127,7 @@ export const createInput = (
   onChange: (which: ActionKey, down: boolean) => void,
 ): InputController => {
   let state = IDLE_INPUT;
+  let entries: readonly HitEntry[] = [];
   const apply = (next: InputState): void => {
     if (next === state) return;
     const before = effectiveKeys(state);
@@ -140,11 +142,14 @@ export const createInput = (
     get pressedTouch(): readonly string[] {
       return touchPressed(state);
     },
+    setEntries(next: readonly HitEntry[]): void {
+      entries = next;
+    },
     handleKey(which: ActionKey, down: boolean): void {
       apply(withKey(state, which, down));
     },
     handlePointer(kind, point, pointerId): void {
-      apply(withPointer(state, kind, point, pointerId));
+      apply(withPointer(state, kind, point, pointerId, entries));
     },
   };
 };

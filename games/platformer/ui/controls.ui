@@ -1,0 +1,20 @@
+# 触屏按键层（T80）：左 / 右 / 跳
+#
+# 为什么单独一层而不是塞进 hud.ui：
+# HUD 是「只显示」的信息层（全部 hit none），按键是「要接指针」的操作层（hit self）。
+# 分开两层，HUD 的布局断言一行都不用改，按键的位置也各自独立演进。
+#
+# 关键：**位置全部由约束算出，不写绝对坐标**。
+# 旧实现把按钮钉死在 `{ x: 24, y: 700, w: 96 }` 这套 390×844 坐标上，
+# 放进窄画框（PC 预览的 348×704 iframe）时按钮直接画到画布外 —— 所以改成这里。
+
+layer base
+
+# 贴底一条 22% 的带，内边距 4% 左右、3% 上下，子元素底部对齐
+#
+# 按钮边长 76 而不是 96：`contain` 模式下 320×568 屏的画布只有 ~262 宽，
+# 三个 96 需要 288（放不下，第三个会溢出画布），76 只需 228，留足余量。
+region controls bottom 22% row justify space-between align end pad-x 4% pad-y 3%
+put touchLeft  size fixed 76 cross 76 hit self style glyph="◀"
+put touchRight size fixed 76 cross 76 hit self style glyph="▶"
+put touchJump  size fixed 76 cross 76 hit self style glyph="⇧"

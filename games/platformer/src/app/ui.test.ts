@@ -10,7 +10,7 @@ import type { Ctx2D } from './deps';
 import { COINS } from './level';
 import { createInitialState } from './state';
 import type { GameState } from './state';
-import { createUiEngine, hitLayer, uiLayerNames } from './ui';
+import { createUiEngine, hitLayer, IDLE_PRESSED, uiLayerNames } from './ui';
 
 const engine = createUiEngine();
 const VIEWPORTS = [
@@ -91,8 +91,31 @@ it('浮层选择：play/dead 没有浮层，won 是 win，gameover 是 gameover'
   expect(engine.modal(viewport, stateOf({ phase: 'dead' }))).toBeNull();
   expect(engine.modal(viewport, stateOf({ phase: 'won' }))?.name).toBe('win');
   expect(engine.modal(viewport, stateOf({ phase: 'gameover' }))?.name).toBe('gameover');
-  expect(uiLayerNames(stateOf({ phase: 'play' }))).toEqual(['hud']);
-  expect(uiLayerNames(stateOf({ phase: 'won' }))).toEqual(['hud', 'win']);
+  expect(uiLayerNames(stateOf({ phase: 'play' }))).toEqual(['controls', 'hud']);
+  expect(uiLayerNames(stateOf({ phase: 'won' }))).toEqual(['controls', 'hud', 'win']);
+  expect(uiLayerNames(stateOf({ phase: 'gameover' }))).toEqual(['controls', 'hud', 'gameover']);
+});
+
+it('触屏按键：任何视口下都完整落在画布内（T80 回归）', () => {
+  for (const viewport of VIEWPORTS) {
+    const controls = engine.controls(viewport, stateOf({ phase: 'play' }), IDLE_PRESSED);
+    for (const node of ['touchLeft', 'touchRight', 'touchJump']) {
+      const rect = controls.rects[node]!;
+      expect(rect.x).toBeGreaterThanOrEqual(0);
+      expect(rect.y).toBeGreaterThanOrEqual(0);
+      expect(rect.x + rect.w).toBeLessThanOrEqual(viewport.width);
+      expect(rect.y + rect.h).toBeLessThanOrEqual(viewport.height);
+    }
+  }
+});
+
+it('触屏按键：按下态注入到 props（画与状态同源）', () => {
+  const controls = engine.controls(VIEWPORTS[0]!, stateOf({ phase: 'play' }), {
+    left: true, right: false, jump: true,
+  });
+  expect(controls.props['touchLeft']).toMatchObject({ pressed: true });
+  expect(controls.props['touchRight']).toMatchObject({ pressed: false });
+  expect(controls.props['touchJump']).toMatchObject({ pressed: true });
 });
 
 it('浮层：遮罩盖满整屏且半透明，按钮在面板内部', () => {

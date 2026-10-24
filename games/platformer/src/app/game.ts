@@ -6,7 +6,7 @@
  *   平台跳跃必须落在地面上），横向速度手动控制，脚下用地形顶面探测。
  * - 相机用 core/camera（死区 120 / 前瞻 60 / 平滑 0.12 / 边界钳制），纵向固定。
  * - 剔除只用**渲染**：敌人/金币/终点逻辑全量 update，与是否可见无关 ——
- *   离屏冻结会让怪停在边界外、行为断档（2026-10-20 修订）。
+ *   离屏冻结会让怪停在边界外、行为断档（Chief 2026-10-20 更正）。
  * - 物理靠 planck 自己的步进与自动睡眠，不手动 setActive 冻结任何 body。
  *
  * T45：HUD 与通关 / 失败面板改成 `.ui` 浮层（`ui.ts` + `ui/*.ui`），渲染变成三层：
@@ -28,7 +28,7 @@ import {
   createInitialState, isFallen, onFall, onRespawned, setPlayer, tickInvulnerable,
 } from './state';
 import type { GameState } from './state';
-import { createUiEngine, hitLayer, hudOffsetFor, uiLayerNames } from './ui';
+import { createUiEngine, hitLayer, hudOffsetFor, touchEntriesOf, uiLayerNames } from './ui';
 
 import type { Game, GameOptions } from './game-contract';
 export type { Game, GameOptions } from './game-contract';
@@ -206,12 +206,17 @@ export const createGame = (platform: PlatformAdapter, options: GameOptions = {})
   const draw = (): void => {
     if (ctx === null) return;
     timing.startFrame();
-    // 1) `.ui` 布局：HUD 恒有（按胶囊整体下移），浮层看 phase（won / gameover）。每帧成本记在 layoutMs
+    // 1) `.ui` 布局：按键层 + HUD 恒有（HUD 按胶囊整体下移），浮层看 phase（won / gameover）。
+    //    每帧成本记在 layoutMs
     const layoutStart = timing.now();
+    const pressed = { left: keys.left, right: keys.right, jump: keys.jump };
+    const controls = ui.controls(viewport(), state, pressed);
     const hud = ui.hud(viewport(), state, hudOffset());
     const modal = ui.modal(viewport(), state);
-    uiErrors = [...hud.errors, ...(modal?.errors ?? [])];
+    uiErrors = [...controls.errors, ...hud.errors, ...(modal?.errors ?? [])];
     uiRects = { hud: hud.rects, modal: modal?.rects ?? null };
+    // 触屏按键的命中表跟着 `.ui` 走：按钮位置改了，能点的地方自动跟着改
+    input.setEntries(touchEntriesOf(controls.rects));
     timing.markLayout(layoutStart, timing.now());
     // 2) 世界层（canvas 手绘，不含 HUD / 结算面板）；剔除只影响绘制，逻辑仍全量更新
     const drawStart = timing.now();
@@ -221,9 +226,9 @@ export const createGame = (platform: PlatformAdapter, options: GameOptions = {})
     render(ctx, {
       state, camera, screen: platform.screen, solids: scene.solids,
       entities: scene.entities,
-      pressed: { left: keys.left, right: keys.right, jump: keys.jump },
     });
-    // 3) 叠加层：不清屏 —— 世界刚画的画面原样保留，HUD / 浮层只画自己的元素
+    // 3) 叠加层：不清屏 —— 世界刚画的画面原样保留，按键 / HUD / 浮层只画自己的元素
+    ui.draw(ctx, controls);
     ui.draw(ctx, hud);
     if (modal !== null) ui.draw(ctx, modal);
     timing.markDraw(drawStart, timing.now());

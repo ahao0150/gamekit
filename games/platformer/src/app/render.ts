@@ -1,13 +1,13 @@
 /**
- * 渲染：**世界层**（走相机变换 + 渲染剔除）→ 触屏按钮 → 死亡提示。
+ * 渲染：**世界层**（走相机变换 + 渲染剔除）→ 死亡提示。
  *
- * T45：HUD 与通关 / 失败面板已迁到 `.ui` 层（见 `ui.ts` 与 `ui/*.ui`），
- * 这个文件只画「游戏世界 + 两个必须跟手的东西」：
- * - 触屏按钮：按下/松手状态每帧来自输入，是游戏操作的一部分；
- * - 死亡提示：只有 0.45 秒的瞬时提示，不构成需要复用的 UI 层。
+ * T45：HUD 与通关 / 失败面板已迁到 `.ui` 层（见 `ui.ts` 与 `ui/*.ui`）。
+ * T80：触屏按键也迁到 `.ui`（`ui/controls.ui`）—— 原来这里的 `TOUCH` 常量是
+ * 390×844 的绝对坐标，放进窄画框（PC 预览的 iframe、小屏）会把按钮画到画布外。
+ * 现在这个文件只画**游戏世界**和一条 0.45 秒的瞬时死亡提示。
  *
  * 剔除只用在**绘制**上：视口外的地面/敌人/金币/终点不画。
- * 玩法逻辑一律全量更新（离屏怪物照样巡逻）—— 这条是 明确纠正过的设计。
+ * 玩法逻辑一律全量更新（离屏怪物照样巡逻）—— 这条是 Chief 明确纠正过的设计。
  */
 
 import { partitionByVisibility } from './deps';
@@ -16,13 +16,6 @@ import type { Entities } from './entities';
 import { CAMERA, PLAYER, SOLIDS, WORLD } from './level';
 import type { LevelRect } from './level';
 import type { GameState } from './state';
-
-/** 触屏按钮（屏幕坐标，逻辑像素）。竖屏时贴底一行。 */
-export const TOUCH = {
-  left: { x: 24, y: 700, w: 96, h: 96 },
-  right: { x: 136, y: 700, w: 96, h: 96 },
-  jump: { x: 278, y: 680, w: 96, h: 96 },
-} as const;
 
 /** 可剔除实体（渲染用：只有位置 + 类型，不依赖玩法对象）。 */
 export type RenderEntity = CullRect & { readonly kind: 'enemy' | 'coin' | 'goal' };
@@ -35,7 +28,6 @@ export interface ViewModel {
   readonly solids: readonly LevelRect[];
   /** 视口内（含 margin）的实体 */
   readonly entities: readonly RenderEntity[];
-  readonly pressed: { readonly left: boolean; readonly right: boolean; readonly jump: boolean };
 }
 
 /** 本帧要画的东西（剔除后的）与统计。 */
@@ -85,8 +77,6 @@ const COLORS = {
   goal: '#e0e8ea',
   goalPole: '#9fb3bb',
   hud: '#edf4ee',
-  button: 'rgba(237,244,238,0.18)',
-  buttonPressed: 'rgba(237,244,238,0.42)',
   pit: '#0d1620',
 } as const;
 
@@ -101,14 +91,6 @@ const text = (ctx: Ctx2D, value: string, x: number, y: number, size: number, col
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   ctx.fillText(value, x, y);
-};
-
-const button = (ctx: Ctx2D, rect: Rect, pressed: boolean, glyph: string): void => {
-  ctx.fillStyle = pressed ? COLORS.buttonPressed : COLORS.button;
-  ctx.beginPath();
-  ctx.arc(rect.x + rect.w / 2, rect.y + rect.h / 2, rect.w / 2, 0, Math.PI * 2);
-  ctx.fill();
-  text(ctx, glyph, rect.x + rect.w / 2 - 12, rect.y + rect.h / 2 - 18, 32, COLORS.hud);
 };
 
 export const render = (ctx: Ctx2D, view: ViewModel): void => {
@@ -151,11 +133,6 @@ export const render = (ctx: Ctx2D, view: ViewModel): void => {
     x: p.x + (p.facing === 1 ? 4 : -8), y: p.y - PLAYER.h / 2 + 9, w: 5, h: 5,
   }, COLORS.playerEye);
   restore();
-
-  // 触屏按钮（游戏操作的一部分，仍由 canvas 手绘）
-  button(ctx, TOUCH.left, view.pressed.left, '◀');
-  button(ctx, TOUCH.right, view.pressed.right, '▶');
-  button(ctx, TOUCH.jump, view.pressed.jump, '⤒');
 
   if (state.phase === 'dead') {
     ctx.fillStyle = 'rgba(10,16,22,0.45)';

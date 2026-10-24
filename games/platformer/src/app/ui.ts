@@ -1,23 +1,29 @@
 /**
- * `.ui` 层引擎（T45）：HUD + 通关 / 失败浮层。
+ * `.ui` 层引擎（T45）：HUD + 触屏按键 + 通关 / 失败浮层。
  *
  * 为什么游戏里还要写这百来行：runtime 提供的是 `.ui` 的**编译 / 绑定 / 布局**能力
  * （compile → bind → layout → 组件 draw），没有「一键渲染 ScreenLayout」这种
  * 属于游戏装配层的 API（ui-demo 也是自己写的）。这里抄的是同一套结构，
  * 但没有 import 任何 ui-demo 代码（那是另一个游戏）。
  *
- * 三层渲染由 `game.ts` 调度：世界（canvas）→ HUD（本文件）→ 浮层（本文件）。
+ * 四层渲染由 `game.ts` 调度：世界（canvas）→ 触屏按键（本文件）→ HUD（本文件）
+ * → 浮层（本文件）。
  * 本文件只做三件事：
  * 1. `bindComponents` 量尺寸（布局期）→ `layout()` 求解矩形；
- * 2. 每帧把金币 / 生命 / 进度这些**动态值注入 props**（`.ui` 里只写初值）；
+ * 2. 每帧把金币 / 生命 / 进度 / 按键按下态这些**动态值注入 props**（`.ui` 里只写初值）；
  * 3. 按 `paintOrder` 正序逐组件 `draw()`（不清屏、不画背景 —— 底层游戏画面保留）。
  *
  * 数据双通道（docs 里刚写的那条）：`bindComponents` 的 `env.data` 与绘制期
  * `DrawDeps.data` 必须给**同一份快照**，否则「量出来的」和「画出来的」会来自两份
  * 不同数据。当前 HUD 的文本走 props（不是数据驱动组件），这里仍把同一份 data
  * 同时传给两边，保证以后换成 list / tabs 这类数据组件时不会踩坑。
+ *
+ * T80：触屏按键从 `render.ts` 手绘迁到本层。旧的 `TOUCH` 常量是 390×844 的绝对坐标，
+ * 画在窄画框（PC 预览的 iframe、小屏手机）里会跑出画布；现在位置由
+ * `ui/controls.ui` 的约束算出，**画与命中都用 layout 出来的同一份矩形**。
  */
 
+import controlsUi from '../../ui/controls.ui';
 import gameoverUi from '../../ui/gameover.ui';
 import hudUi from '../../ui/hud.ui';
 import winUi from '../../ui/win.ui';
@@ -27,6 +33,7 @@ import type {
   ComponentRegistry,
   Ctx2D,
   DrawDeps,
+  HitEntry,
   LayoutSpec,
   LayoutViewport,
   Rect,
@@ -35,10 +42,20 @@ import type {
 } from './deps';
 import { COINS } from './level';
 import type { GameState } from './state';
-import { createPlatformerRegistry } from './ui-registry';
+import { createPlatformerRegistry, TOUCH_NODES } from './ui-registry';
 
 /** HUD / 浮层用到的层名（同时是 `.ui` 文件名的语义标识）。 */
-export type UiLayerName = 'hud' | 'win' | 'gameover';
+export type UiLayerName = 'controls' | 'hud' | 'win' | 'gameover';
+
+/** 三个触屏按键的按下态（每帧从输入注入 `.ui`）。 */
+export interface PressedKeys {
+  readonly left: boolean;
+  readonly right: boolean;
+  readonly jump: boolean;
+}
+
+/** 什么都没按（初值 / 单测默认）。 */
+export const IDLE_PRESSED: PressedKeys = { left: false, right: false, jump: false };
 
 /** 一份求解好的 `.ui` 层（矩形 + 绘制顺序 + 组件定义 + 合并后的 props）。 */
 export interface UiLayer {
@@ -55,6 +72,8 @@ export interface UiEngine {
   readonly registry: ComponentRegistry;
   /** HUD 层（每帧都在）；`offset` 用于系统胶囊避让（T49，web 恒为 0） */
   hud(viewport: LayoutViewport, state: GameState, offset?: HudOffset): UiLayer;
+  /** 触屏按键层：矩形由 `ui/controls.ui` 算出，绘制与命中都用它 */
+  controls(viewport: LayoutViewport, state: GameState, pressed: PressedKeys): UiLayer;
   /** 浮层：won / gameover 时返回对应 `.ui`，其余 phase 返回 null */
   modal(viewport: LayoutViewport, state: GameState): UiLayer | null;
   /** 画一层（不清屏，只画组件） */
@@ -62,6 +81,7 @@ export interface UiEngine {
 }
 
 const SPEC_OF: Readonly<Record<UiLayerName, { readonly spec: LayoutSpec }>> = {
+  controls: controlsUi,
   hud: hudUi,
   win: winUi,
   gameover: gameoverUi,
@@ -76,8 +96,19 @@ const EMPTY_ASSETS = { get: (): null => null };
 /** 金币总数（进度条 max）。 */
 const TOTAL_COINS = COINS.length;
 
-/** 每帧动态 props：金币 / 生命 / 收集进度 / 结算统计。 */
-const dynamicPropsOf = (name: UiLayerName, state: GameState): Readonly<Record<string, StyleProps>> => {
+/** 每帧动态 props：按键按下态 / 金币 / 生命 / 收集进度 / 结算统计。 */
+const dynamicPropsOf = (
+  name: UiLayerName,
+  state: GameState,
+  pressed: PressedKeys,
+): Readonly<Record<string, StyleProps>> => {
+  if (name === 'controls') {
+    return {
+      touchLeft: { pressed: pressed.left },
+      touchRight: { pressed: pressed.right },
+      touchJump: { pressed: pressed.jump },
+    };
+  }
   if (name === 'hud') {
     return {
       coinBadge: { label: `金币 ${state.coins}` },
@@ -128,11 +159,27 @@ export const hitLayer = (layer: UiLayer, x: number, y: number): string | null =>
   return null;
 };
 
+/**
+ * 触屏按键的命中表：矩形直接取 `.ui` 解出来的那一份，所以「画在哪」和「点在哪」
+ * 永远是同一份数据。
+ *
+ * 旧实现用写死的 `TOUCH` 常量（390×844 坐标系），画与点虽然同源但都不随视口变化 ——
+ * 放进窄画框时按钮会跑到画布外，点也点不中。改成从 layout 结果派生后任何视口都对得上。
+ */
+export const touchEntriesOf = (rects: Readonly<Record<string, Rect>>): readonly HitEntry[] => {
+  const out: HitEntry[] = [];
+  TOUCH_NODES.forEach(([action, node], index) => {
+    const rect = rects[node];
+    if (rect !== undefined) out.push({ name: action, rect, hit: 'self', layer: 0, index });
+  });
+  return out;
+};
+
 /** 当前应该画几层（自下而上；不含世界层，世界由 canvas 手绘）。 */
 export const uiLayerNames = (state: GameState): readonly UiLayerName[] => {
-  if (state.phase === 'won') return ['hud', 'win'];
-  if (state.phase === 'gameover') return ['hud', 'gameover'];
-  return ['hud'];
+  if (state.phase === 'won') return ['controls', 'hud', 'win'];
+  if (state.phase === 'gameover') return ['controls', 'hud', 'gameover'];
+  return ['controls', 'hud'];
 };
 
 /** HUD 内容与系统胶囊之间至少留的视觉间隙（逻辑像素）。 */
@@ -203,6 +250,7 @@ export const createUiEngine = (): UiEngine => {
     viewport: LayoutViewport,
     state: GameState,
     offset: HudOffset = ZERO_HUD_OFFSET,
+    pressed: PressedKeys = IDLE_PRESSED,
   ): UiLayer => {
     // 双通道的同一份数据快照
     const data: UiData = { coins: state.coins, lives: state.lives, phase: state.phase };
@@ -213,7 +261,7 @@ export const createUiEngine = (): UiEngine => {
       rects: shiftRects(solved.rects, offset),
       paintOrder: solved.paintOrder,
       components: bound.components,
-      props: mergeProps(bound.props, dynamicPropsOf(name, state)),
+      props: mergeProps(bound.props, dynamicPropsOf(name, state, pressed)),
       data,
       errors: [...bound.errors, ...solved.errors],
     };
@@ -235,6 +283,7 @@ export const createUiEngine = (): UiEngine => {
   return {
     registry,
     hud: (viewport, state, offset) => compute('hud', viewport, state, offset),
+    controls: (viewport, state, pressed) => compute('controls', viewport, state, ZERO_HUD_OFFSET, pressed),
     modal(viewport, state): UiLayer | null {
       if (state.phase === 'won') return compute('win', viewport, state);
       if (state.phase === 'gameover') return compute('gameover', viewport, state);
