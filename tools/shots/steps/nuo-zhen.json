@@ -1,0 +1,52 @@
+{
+  "slug": "nuo-zhen",
+  "screenPath": "state.screen",
+  "start": "primaryButton",
+  "maxSteps": 8,
+  "steps": [
+    {
+      "name": "opening-pick",
+      "tap": { "key": "primaryButton" },
+      "expect": { "screen": "pick" },
+      "timeoutMs": 5000
+    },
+    {
+      "name": "battle",
+      "tap": { "key": "cardA" },
+      "expect": { "screen": "battle" },
+      "timeoutMs": 5000
+    },
+    {
+      "name": "build",
+      "taps": [
+        { "key": "buildSword" },
+        { "key": "battleField", "rel": [0.336, 0.222] }
+      ],
+      "expect": { "all": [{ "path": "state.battle.towers.length", "op": "gte", "value": 1 }] },
+      "timeoutMs": 8000,
+      "tapMs": 400
+    },
+    {
+      "name": "early-call",
+      "tap": { "key": "earlyBtn" },
+      "expect": { "all": [{ "path": "state.battle.phase", "op": "eq", "value": "battle" }] },
+      "timeoutMs": 5000
+    },
+    {
+      "name": "wave-pick",
+      "taps": [{ "point": [0.5, 0.04] }],
+      "expect": { "screen": "pick" },
+      "timeoutMs": 60000,
+      "tapMs": 600
+    },
+    {
+      "name": "result",
+      "taps": [{ "point": [0.5, 0.5] }],
+      "expect": { "screen": "result" },
+      "timeoutMs": 300000,
+      "tapMs": 900,
+      "required": false
+    }
+  ],
+  "resultButtons": ["primaryButton", "secondaryButton", "button"]
+}

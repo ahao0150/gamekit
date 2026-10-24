@@ -1,0 +1,11 @@
+# 轮播组件 demo（T21）
+#
+# 吸附状态机在 core/ui/carousel.ts（拖动跟手 + 松手吸附整页），这里只描述占位。
+# 页面数据（pages / renderItem）由游戏在 DrawDeps.data 里注入。
+# 尺寸用 fill：离线 mg.ui.check 不接注册表，auto 取不到 measure() 会报 0×0。
+
+region head top 10% row align center pad-x 5%
+put label size fill cross fixed 24 style text="推荐" fontSize=18 align=left
+
+region body fill column align stretch pad-x 6% gap 4%
+put carousel size fill style index=0 offset=0 loop=false indicator=true indicatorSize=6 indicatorGap=8

@@ -1,0 +1,19 @@
+{
+  "name": "@mg/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "gamekit 命令行",
+  "bin": {
+    "mg": "./bin/mg.mjs"
+  },
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@mg/runtime": "workspace:*",
+    "@mg/vite-plugin": "workspace:*"
+  }
+}

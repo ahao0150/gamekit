@@ -1,0 +1,18 @@
+# 通用滑动容器 demo（T31）：scroll 只负责裁剪 + 纵向偏移，内容由渲染层回调画
+#
+# 为什么内容不能写进 `.ui`：`.ui` 是**扁平布局、没有嵌套**，容器里装「任意内容」
+# 只能靠回调 —— 游戏在 `DrawDeps.data.renderContent(ctx, box, scrollTop)` 里按
+# 内容坐标系画（box 是原始坐标，组件已经 translate(0, -scrollTop)）。
+#
+# `contentH` 是内容总高（由游戏算好传进来，组件不做钳制）；
+# 旁边的 `scrollbar` 只画滑块，两个组件互不依赖、通常一起用。
+# 原 T20 的「列表 + 滚动条」示例已挪到 `scrollbar.ui`。
+#
+# 静态示例值：scrollTop=0 / contentH=1200。
+
+region head top 10% row align center pad-x 5%
+put label size fill cross fixed 24 style text="长列表（滑动容器）" fontSize=18 align=left
+
+region body fill row align stretch pad-x 5% pad-y 1% gap 1%
+put scroll size fill style scrollTop=0 contentH=1200 bgColor="#1d2a30"
+put scrollbar size fixed 8 style value=0 viewport=0.4 thickness=4

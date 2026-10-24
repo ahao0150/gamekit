@@ -1,0 +1,10 @@
+{
+  "design": {
+    "width": 390,
+    "height": 844
+  },
+  "fit": "contain",
+  "assetsDir": "assets",
+  "title": "（改成本游戏的中文名）",
+  "subpackages": {}
+}

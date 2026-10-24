@@ -1,0 +1,17 @@
+[
+  {
+    "level": 1,
+    "expToNext": 80,
+    "rewardGold": 25
+  },
+  {
+    "level": 2,
+    "expToNext": 120,
+    "rewardGold": 50
+  },
+  {
+    "level": 3,
+    "expToNext": 200,
+    "rewardGold": 100
+  }
+]

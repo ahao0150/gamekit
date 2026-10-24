@@ -1,0 +1,55 @@
+# 主菜单（T13d）：用通用组件库重写 —— panel / progress / 三态 button / label
+#
+# 语法真源：docs/ui-syntax.md v0.5（本文只是用法示例，不是规范）
+#
+# 三条约束决定了写法：
+# 1. `put` 的第一个词是**组件名**，不是自由命名 —— 不能写 `put menuPanel`。
+#    组件名在一个界面里只能出现一次（rects 以组件名为键），所以：
+#    「开始」用通用 `button`（三态），另外两个入口用内置 `primaryButton` /
+#    `secondaryButton`（不同名字，同一套组件契约）。
+# 2. `.ui` 没有嵌套 —— 「文字压在面板上」用 layer 表达：base 放面板，overlay 放文字。
+# 3. overlay 的 region 是整屏坐标系，靠 justify / align / pad 定位。
+#
+# 带高用百分比（画布 fit: fill 铺满视口），只有按钮/进度条这类确实需要固定
+# 触摸尺寸的才写固定像素。
+
+layer base
+
+# 顶部品牌带 26%：panel 当底色（演示通用 panel 组件）
+region header top 26% column justify center align stretch pad-x 8%
+put panel size fill style fillColor="#1d2a30"
+
+# 中部进度带 18%：progress 居中一条（value / max 由 layout 动态注入）
+region stats top 18% column justify center align stretch pad-x 10%
+put progress size fixed 14 cross 100% style value=0 max=3 radius=7
+
+# 底部入口带 38%：三态按钮（button）+ 三个内置入口
+# 320×568 下带高 215.8px > 56 + 44×3 + 3×5.68，装得下
+region footer bottom 38% column justify end align stretch pad-x 10% gap 1%
+put button size fixed 56 style text="开始" state=normal
+put primaryButton size fixed 44 style label="打开背包"
+put secondaryButton size fixed 44 style label="打开弹窗"
+put card0 size fixed 44 style label="组件总览（21）"
+
+# T32/T35：四个入口横排（放在入口带**上面**的一条 11% 带）
+# bottom 带按声明顺序从屏幕底部往上叠：footer 先声明 = 贴底，这条在它上面。
+# 横排（row）时 `size` 是宽、`cross` 是高 —— 别把 44 写成 size（会变成 44 宽、38 高）。
+# 22%×4 + 4%×3 间距 = 100%，刚好铺满；320 宽下每格 70px > 44 高，胶囊按钮成立。
+region popupEntries bottom 11% row justify center align center gap 4%
+put card1 size 22% cross 44 style label="底部抽屉"
+put infoPanel size 22% cross 44 style label="半屏面板"
+put toast size 22% cross 44 style text="金币提示" textSize=13
+# T35：网格背包入口（内置 parcelGrid 画的是 3×2 格网，语义正好是「网格」）
+put parcelGrid size 22% cross 44
+
+layer overlay
+
+# 标题压在顶部面板上：justify start + pad-y 4% 把文字放进 26% 的带里
+region titleLayer fill column justify start align center pad-y 4% gap 1%
+put label size fixed 34 style text="UI 链验证 Demo" fontSize=20 align=center
+put statusText size fixed 22 style label="T13d：widgets 接进游戏" tone=light
+
+# T38：嵌套滚动入口（右上角小条）。coinBadge 在菜单里还没用过；
+# 96×26 放得下「嵌套滚动」四个字（coinBadge 字号是图标高的 0.8 = 19.2px）。
+region nestEntry fill row justify end align start pad 3%
+put coinBadge size fixed 96 cross 26 style label="嵌套滚动"

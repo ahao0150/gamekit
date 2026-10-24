@@ -1,0 +1,19 @@
+{
+  "name": "mg-template-iaa-simple",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "gamekit IAA 小游戏起点模板（点按钮加分 / 存档 / 分数条 / 广告占位）",
+  "scripts": {
+    "dev": "mg dev",
+    "build": "mg build --all",
+    "check": "mg check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mg/runtime": "workspace:*"
+  },
+  "devDependencies": {
+    "@mg/cli": "workspace:*"
+  }
+}

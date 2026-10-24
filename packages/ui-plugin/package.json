@@ -1,0 +1,12 @@
+{
+  "name": "@mg/ui-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": ".ui 界面描述语言的 Vite 插件：构建期编译成纯数据模块",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

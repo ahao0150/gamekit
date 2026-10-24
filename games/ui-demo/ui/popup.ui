@@ -1,0 +1,22 @@
+# 确认弹窗（T42：真浮层）——只描述**叠加在底层之上的这一层**，不含任何假底层
+#
+# 以前这里有个 `layer base` 画「底层按钮（遮罩盖住）」：那是弹窗文件自己伪造的底层。
+# T42 之后底层由调用方（menu / gallery / …）原样画，弹窗文件只负责遮罩 + 面板 + 按钮。
+#
+# 写法（`.ui` 没有嵌套，overlay 的 region 一律整屏坐标系）：
+# 1. 遮罩：`region mask fill` + `panel fill` + `hit block` + 半透明黑 —— 压暗底层、
+#    吃掉点击；节点名是 `panel`，ACTION_OF 给它绑了「关闭」（点遮罩 = 关弹窗）；
+# 2. 面板与确认按钮各用一个 overlay region，靠 justify / pad 对齐到同一中心；
+# 3. 层序：遮罩 → 面板 → 按钮（后声明后画，命中逆序也先命中按钮）。
+
+layer overlay
+
+region mask fill
+put panel size fill hit block style fillColor="rgba(0,0,0,0.55)"
+
+# 面板占上半屏（pad-y 20% + 固定 240 高），按钮贴内容区底部（justify end）
+region dialog fill column justify start align center pad-y 20%
+put card0 size fixed 240 cross 80% style label="确认打开？"
+
+region dialogAction fill column justify end align center pad-y 20%
+put primaryButton size fixed 56 cross 56% style label="确定"

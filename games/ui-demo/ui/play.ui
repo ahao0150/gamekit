@@ -1,0 +1,18 @@
+# 游戏进行中：顶部 HUD + 中央可点目标 + 底部操作
+#
+# tapTarget 是 demo 自定义组件（defineComponent 注册），不是内置件。
+# 点它走真实 pointer 事件：命中判定用 layout() 算出的 tapTarget 矩形。
+#
+# 中央区域用 `justify center` 把目标在垂直方向居中（v0.4）：
+# 目标是 180 固定尺寸（可点区域有物理下限，不随屏幕缩），
+# 旧写法要拿 gapTop / gapBottom 两个 fill 空 region 夹住 240 高的 stage。
+
+region head top 10% row align center pad-x 6% gap 3%
+put statusText size fill cross 36 style label="点目标 3 次" tone=light
+put coinBadge size fixed 96 cross 24 style label="0 / 3"
+
+region stage fill column align center justify center
+put tapTarget size fixed 180 cross 180 style label="0 / 3"
+
+region footer bottom 13% column align stretch pad-x 12%
+put secondaryButton size fill style label="放弃"

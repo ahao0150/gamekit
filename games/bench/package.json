@@ -1,0 +1,13 @@
+{
+  "name": "bench",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Canvas 2D 合成负载性能基准（T26）：draw 成本、掉帧点、离屏缓存收益——用数据回答「要不要上 WebGL」",
+  "scripts": {
+    "dev": "node ../../node_modules/vite/bin/vite.js --port 5300 --strictPort",
+    "typecheck": "node ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.json",
+    "test": "node ../../node_modules/vitest/vitest.mjs run",
+    "bench": "node tools/run-bench.mjs"
+  }
+}

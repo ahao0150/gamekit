@@ -1,0 +1,19 @@
+{
+  "name": "platformer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "gamekit @mg/physics-2d 官方示例：横版平台跳跃",
+  "scripts": {
+    "dev": "mg dev",
+    "build": "mg build --all",
+    "check": "mg check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mg/runtime": "workspace:*"
+  },
+  "devDependencies": {
+    "@mg/cli": "workspace:*"
+  }
+}

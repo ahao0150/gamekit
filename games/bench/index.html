@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>gamekit · Canvas 2D 性能基准</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0e1116;
+        --panel: #161b23;
+        --line: #263041;
+        --text: #d5dbe6;
+        --dim: #8792a6;
+        --ok: #5ad08a;
+        --warn: #e8b45a;
+        --bad: #f06a6a;
+        --accent: #6aa8ff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 13px/1.55 ui-monospace, 'Cascadia Code', Consolas, monospace;
+      }
+      main {
+        display: grid;
+        grid-template-columns: minmax(460px, 1fr) auto;
+        gap: 20px;
+        padding: 18px;
+        align-items: start;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 17px;
+        font-weight: 600;
+      }
+      h2 {
+        margin: 18px 0 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent);
+      }
+      p.note {
+        margin: 0 0 14px;
+        color: var(--dim);
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px 14px;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      label.chk {
+        display: inline-flex;
+        gap: 5px;
+        align-items: center;
+        cursor: pointer;
+      }
+      input[type='text'],
+      input[type='number'] {
+        background: #0b0e13;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        color: var(--text);
+        font: inherit;
+        padding: 3px 7px;
+      }
+      input[type='text'] {
+        width: 190px;
+      }
+      input[type='number'] {
+        width: 72px;
+      }
+      button {
+        background: var(--accent);
+        border: 0;
+        border-radius: 5px;
+        color: #08101c;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 600;
+        padding: 4px 14px;
+      }
+      button:disabled {
+        background: var(--line);
+        color: var(--dim);
+        cursor: default;
+      }
+      button.ghost {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--text);
+        font-weight: 400;
+      }
+      #status {
+        color: var(--dim);
+        min-height: 18px;
+      }
+      table {
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 12px;
+        width: 100%;
+      }
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 3px 8px;
+        text-align: right;
+        white-space: nowrap;
+      }
+      th {
+        background: #1b2230;
+        color: var(--dim);
+        font-weight: 500;
+      }
+      td.kind,
+      th.kind {
+        text-align: left;
+      }
+      .ok {
+        color: var(--ok);
+      }
+      .warn {
+        color: var(--warn);
+      }
+      .bad {
+        color: var(--bad);
+        font-weight: 600;
+      }
+      pre {
+        background: #0b0e13;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--dim);
+        margin: 8px 0 0;
+        overflow-x: auto;
+        padding: 8px 10px;
+      }
+      .stage {
+        position: sticky;
+        top: 18px;
+        text-align: center;
+      }
+      #stage {
+        background: #000;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        display: block;
+      }
+      .hint {
+        color: var(--dim);
+        font-size: 11px;
+        margin-top: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div>
+        <h1>Canvas 2D 性能基准</h1>
+        <p class="note">
+          测「每帧绘制耗时」：<code>performance.now()</code> 包住 clear + draw，不含浏览器合成。
+          每配置预热后采样 120 帧，报中位数与 p95（卡顿看 p95，不看均值）。
+        </p>
+
+        <h2>手动跑（1×，本机 CPU）</h2>
+        <div class="card">
+          <div class="row">
+            <span class="dim">负载</span>
+            <span id="kinds"></span>
+          </div>
+          <div class="row">
+            <label>N <input id="ns" type="text" value="50,100,200,500,1000" /></label>
+            <label>帧数 <input id="frames" type="number" value="120" min="20" max="600" step="10" /></label>
+            <label>dpr <input id="dpr" type="number" value="1" min="1" max="3" step="0.5" /></label>
+            <button id="run">开始</button>
+            <button id="stop" class="ghost" disabled>停止</button>
+          </div>
+          <div id="status">就绪</div>
+        </div>
+
+        <h2>降频矩阵（CPU throttling 1× / 4× / 6×）</h2>
+        <p class="note">
+          浏览器的 CPU 节流只能由 DevTools 协议设置，页面自己设不了。自动跑：
+        </p>
+        <pre>cd games/bench
+node tools/run-bench.mjs</pre>
+
+        <div id="env"></div>
+        <div id="results"></div>
+      </div>
+
+      <div class="stage">
+        <canvas id="stage" width="390" height="844"></canvas>
+        <div class="hint">390×844 逻辑像素 · 测量画布</div>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

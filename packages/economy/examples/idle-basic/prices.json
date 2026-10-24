@@ -1,0 +1,12 @@
+[
+  {
+    "id": "workshop",
+    "costGold": 200,
+    "unlockLevel": 2
+  },
+  {
+    "id": "mine",
+    "costGold": 800,
+    "unlockLevel": 2
+  }
+]

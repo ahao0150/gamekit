@@ -1,0 +1,12 @@
+{
+  "name": "@mg/story",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "扁平 TSV 剧情编译、运行与静态检查（纯函数）",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

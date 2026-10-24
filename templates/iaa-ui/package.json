@@ -1,0 +1,19 @@
+{
+  "name": "mg-template-iaa-ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "gamekit 小游戏模板（.ui 界面链：布局用 .ui 描述，组件走注册表，命中用 pickHit）",
+  "scripts": {
+    "dev": "mg dev",
+    "build": "mg build --all",
+    "check": "mg check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mg/runtime": "workspace:*"
+  },
+  "devDependencies": {
+    "@mg/cli": "workspace:*"
+  }
+}

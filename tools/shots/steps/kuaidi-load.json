@@ -1,0 +1,31 @@
+{
+  "slug": "kuaidi-load",
+  "screenPath": "state.phase",
+  "start": "primary",
+  "maxSteps": 5,
+  "steps": [
+    {
+      "name": "goal",
+      "tap": { "start": true },
+      "expect": { "screen": "goal" },
+      "timeoutMs": 5000
+    },
+    {
+      "name": "load",
+      "tap": { "start": true },
+      "expect": { "screen": "load" },
+      "timeoutMs": 5000
+    },
+    {
+      "name": "placed",
+      "taps": [
+        { "key": "cards", "index": 0 },
+        { "key": "grid", "rel": [0.166, 0.25] }
+      ],
+      "expect": { "any": [{ "path": "state.placed.length", "op": "gt", "value": 0 }] },
+      "timeoutMs": 6000,
+      "tapMs": 350
+    }
+  ],
+  "resultButtons": ["primary", "secondary"]
+}

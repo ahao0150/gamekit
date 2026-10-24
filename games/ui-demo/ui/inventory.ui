@@ -1,0 +1,40 @@
+# 背包（T13d）：通用 list 虚拟列表 + scrollbar 滚动条 + 真实拖动
+#
+# 语法真源：docs/ui-syntax.md v0.5
+#
+# 结构：
+# - base：顶部品牌带（panel）+ 工具行（badge 计数 + button 返回）+ 列表（fill）
+# - overlay：顶部状态文字（选中信息）+ 右侧滚动条
+#
+# 关键约束：
+# 1. `put` 的第一个词是组件名（不是自由命名）；一个界面里每个组件名只能用一次 ——
+#    所以「计数」用通用 `badge`、「返回」用通用 `button`、「状态」用内置 `statusText`。
+# 2. list 的高度由 `size fill` 决定（auto 在离线 ui.check 里没有注册表，必报 0×0）。
+# 3. scrollbar 是 overlay：它要压在列表右缘上，不能占列表的布局空间。
+#    高度用 `71%` 近似「列表可视区」（head 16% + tools 11% = 27% 之后），
+#    `.ui` 表达不了「和另一个 region 精确对齐」，这是约束语言的边界。
+
+layer base
+
+# 顶部品牌带 16%
+region head top 16% column justify center align stretch pad-x 8%
+put panel size fill style fillColor="#1d2a30"
+
+# 工具行 11%：badge 显示件数，button 返回菜单
+region tools top 11% row justify space-between align center pad-x 8% gap 2%
+put badge size fixed 76 cross 34 style text="20 件"
+put button size fixed 96 cross 44 style text="返回" state=normal
+
+# 列表：吃掉剩下的 73%，纵向列表每项 56px、带分割线
+region body fill column align stretch pad-x 4% pad-y 1%
+put list size fill style itemH=56 gap=0 divider=true emptyText="背包是空的"
+
+layer overlay
+
+# 状态文字压在顶部品牌带上（选中信息；没选时是提示）
+region statusLayer fill column justify start align center pad-y 4%
+put statusText size fixed 26 style label="拖动列表滚动，点一项选中" tone=light
+
+# 滚动条：贴右，高度近似列表可视区（71%），hit none —— 不挡列表的点击
+region scrollLayer fill column justify end align end pad-x 1%
+put scrollbar size 71% cross fixed 6 hit none style direction=vertical thickness=6

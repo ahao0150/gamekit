@@ -1,0 +1,15 @@
+# 网格组件 demo（T31）：4 列 × 每格 72px，虚拟渲染只画可见行
+#
+# 两个组件的取值口径：
+# 1. `grid` 的单元格宽由组件算：`(box.w - gapX × (cols-1)) / cols`，
+#    `.ui` 里只给列数 / 格高 / 间距，不写坐标。
+# 2. `scrollTop` 由游戏按 `gridWindow` / `scroll.ts` 钳好再传（离线只看静态态：0）。
+#
+# 尺寸用 `size fill` 吃满 body 带；不带 auto 是因为离线 ui.check 不接注册表，
+# `size auto` 取不到 measure() 会报 0×0。
+
+region head top 10% row align center pad-x 5%
+put label size fill cross fixed 24 style text="包裹格" fontSize=18 align=left
+
+region body fill column align stretch pad-x 3% pad-y 2%
+put grid size fill style cols=4 cellH=72 gapX=8 gapY=8 virtual=true itemColor="#2b4a52" emptyText="暂无物品"

@@ -1,0 +1,4 @@
+# start: intro
+id	type	speaker	text	next	condition	set
+intro	line	旁白	（骨架台词）	end		
+end	end	旁白	（结局）			

@@ -1,0 +1,29 @@
+{
+  "slug": "arrow-pop",
+  "screenPath": "state.screen",
+  "start": "primaryButton",
+  "maxSteps": 5,
+  "steps": [
+    {
+      "name": "play",
+      "tap": { "start": true },
+      "expect": { "screen": "play" },
+      "timeoutMs": 5000
+    },
+    {
+      "name": "play-mid",
+      "taps": [{ "geom": "arrows" }],
+      "expect": { "any": [{ "path": "state.moves", "op": "gt", "value": 0 }] },
+      "timeoutMs": 6000,
+      "tapMs": 280
+    },
+    {
+      "name": "result",
+      "taps": [{ "geom": "arrows" }],
+      "expect": { "screen": "result" },
+      "timeoutMs": 8000,
+      "required": false
+    }
+  ],
+  "resultButtons": ["primaryButton", "secondaryButton", "button"]
+}

@@ -1,0 +1,46 @@
+# 组件总览（T27）：21 个通用组件在一个界面里全部可见
+#
+# 语法真源：docs/ui-syntax.md v0.6
+#
+# 结构：
+# - base：顶部品牌带（panel）+ 工具行（badge 计数 + 弹窗入口 + button 返回）+ list
+# - overlay：标题（压在品牌带上）+ 右侧滚动条
+#
+# 关键点：这个界面的「行内容」不是组件节点 —— 每行由 renderItem 从注册表取
+# 组件定义、直接调 `def.draw(ctx, rect, props, deps)` 画出来（见 render.ts）。
+# `.ui` 只负责「列表放在哪、多大、行多高」，这也顺便验证了「组件 draw 可以
+# 脱离 .ui 节点独立调用」。
+#
+# list 的高度由 `size fill` 决定（auto 在离线 ui.check 里没有注册表，必报 0×0）。
+#
+# T42：工具行加「弹窗」入口（secondaryButton）—— 验收要在 gallery 滚到 300 后
+# 开 / 关浮层，再确认滚动位没被清空；这个入口就是那条验收的触发点。
+
+layer base
+
+# 顶部品牌带 14%
+region head top 14% column justify center align stretch pad-x 8%
+put panel size fill style fillColor="#1d2a30"
+
+# 工具行 9%：badge 计数 + 弹窗入口 + 返回
+# 320 宽下可用 268.8px：76 + 80 + 92 + 2×2% 间距 = 260.8，装得下
+region tools top 9% row justify space-between align center pad-x 8% gap 2%
+put badge size fixed 76 cross 30 style text="21 个"
+put secondaryButton size fixed 80 cross 38 style label="弹窗"
+put button size fixed 92 cross 38 style text="返回" state=normal
+
+# 列表：吃掉剩下的 77%，每行 88px（比最高的组件 66px 再多一点呼吸）
+# itemColor 特意比 theme.panel 更暗：行内组件（panel / avatar 无素材时回落 theme.panel）
+# 要能从行底色里分出来 —— 否则「这一行是不是空白」在像素上判不出来。
+region body fill column align stretch pad-x 3% pad-y 1%
+put list size fill style itemH=88 gap=0 divider=true itemColor="#17242a" emptyText="没有组件"
+
+layer overlay
+
+# 标题压在顶部品牌带上
+region titleLayer fill column justify start align center pad-y 3%
+put label size fixed 26 style text="通用组件总览" fontSize=16 align=center
+
+# 滚动条：贴右，高度近似列表可视区（75%），hit none —— 不挡列表的点击
+region scrollLayer fill column justify end align end pad-x 1%
+put scrollbar size 75% cross fixed 6 hit none style direction=vertical thickness=6

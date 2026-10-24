@@ -1,0 +1,26 @@
+# HUD 文字在 overlay 的 hudText（base 的 top 是累加，不能靠 hudLayer 叠）
+# 熨烫页（T63）：boardArea 内部 splitRows([0.85, 0.15]) = 盘面 / 温度条；道具条单独一条带
+
+layer base
+
+region head top 9% column justify center align stretch
+put panel size fill style fillColor="#F2F8F6"
+
+region hudLayer top 9% column justify center align stretch pad-x 6%
+put hudSlot size fill hit none
+
+region selfDraw fill column justify center align stretch
+put boardArea size fill hit none
+
+region toolBar bottom 9% column justify center align stretch pad-x 14%
+put primaryButton size fill cross 40 style label="温度稳定5秒"
+
+layer overlay
+
+# HUD 文字必须叠在 HUD 带上：base 层的 top 是**累加**语义（head 9% + hudLayer 9% =
+# 文字落到 76..152），所以挪到 overlay 用 at 定位到 head 中心（4.5% 视口高）。
+region hudText at 50% 4.5% size 100% 9% column justify center align stretch pad-x 6%
+put label size fixed 24 hit none style text="温度 30 · 烫糊 0%" fontSize=14 align=center color="#1B211F"
+
+region homeLayer fill column justify start align end pad-y 2% pad-x 4%
+put button size fixed 28 cross 22% style text="放弃" state=normal

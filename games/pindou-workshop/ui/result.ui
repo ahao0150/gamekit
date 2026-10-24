@@ -1,0 +1,22 @@
+layer base
+
+# 全屏遮罩：**压暗**背景（浅色遮罩会和磨砂白面板同色，面板边界消失——第一版就这么翻的）。
+# 遮罩用不画图的占位组件，alpha 遮罩由 render.ts 自绘（`.ui` 的 fillColor 只吃 hex，
+# 写 rgba 会被丢掉、回落成不透明的 theme.panel —— 第一版整屏发白就是这么来的）。
+# 只放一个 fill region。**不要**再写第二个 fill region —— 多个 fill 会平分剩余高度
+# （之前 dialog 也是 fill，结果遮罩只盖上半、内容全掉到下半屏）。
+region backdrop fill
+put backdropMask size fill hit block
+
+layer overlay
+
+# 对话框：底板与内容都 at 到视口中心（两个 region 同位置叠放，先底板后内容）。
+# 不用 `top`/`fill`：base 层是流式的，叠不出「遮罩在上、面板居中」的效果。
+region dialogBg at 50% 50% size 84% 58% column justify center align center
+put dialogPanel size fill hit none
+
+region dialog at 50% 50% size 84% 58% column justify center align center gap 3%
+put label size fixed 48 style text="通关！" fontSize=26 align=center color="#1B211F"
+put statusText size fixed 28 cross 80% style label="" tone=ink
+put primaryButton size 12% cross 56% style label="再来一局"
+put secondaryButton size 10% cross 56% style label="选 关"

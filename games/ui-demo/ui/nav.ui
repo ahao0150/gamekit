@@ -1,0 +1,14 @@
+# 数据驱动容器组件 demo（T19）：tabs / segmented / keypad
+#
+# 三个组件的数据（标签文字 / 分段 / 键位）从 DrawDeps.data 注入，props 只放标量与索引
+#（StyleProps 的值只能是 string/number/boolean，装不了数组）。
+# 尺寸写 fixed：离线 mg.ui.check 不接组件注册表，auto 取不到 measure() 会报 0×0。
+# keypad 高度 = 4 行 × 52 + 3 × 6 = 226，与 measure() 的返回值一致。
+
+region head top 10% row align center pad-x 5%
+put label size fill cross fixed 24 style text="导航" fontSize=18 align=left
+
+region body fill column align stretch pad-x 6% gap 4%
+put tabs size fixed 40 style active=1
+put segmented size fixed 32 style active=0
+put keypad size fixed 226 style cols=3 keyH=52 gap=6

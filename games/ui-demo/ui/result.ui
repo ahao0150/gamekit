@@ -1,0 +1,16 @@
+# 结算：标题 + 计分面板 + 再来一次
+#
+# scorePanel 是 demo 的第二个自定义组件（注册示例），显示命中数与评级。
+#
+# 面板用 `justify center` 在剩余空间垂直居中（v0.4），不再靠两个 fill 空 region
+# 夹住；直接给 body 写百分比带高不行 —— 320×568 上 30% 只有 170px，
+# 装不下 240 的面板。
+
+region head top 13% column align stretch pad-x 8%
+put statusText size fixed 56 style label="完成！" tone=light
+
+region body fill column align center justify center
+put scorePanel size fixed 240 cross 88% style label="3 / 3" grade="完美"
+
+region footer bottom 13% column align stretch pad-x 12%
+put primaryButton size fixed 56 style label="再来一次"

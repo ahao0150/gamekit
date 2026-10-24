@@ -1,0 +1,10 @@
+{
+  "design": {
+    "width": 390,
+    "height": 844
+  },
+  "fit": "contain",
+  "assetsDir": "assets",
+  "title": "平台跳跃 Demo",
+  "subpackages": {}
+}

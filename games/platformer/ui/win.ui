@@ -1,0 +1,28 @@
+# 通关浮层（T45）：叠在**仍然可见的游戏画面**上，不是切屏
+#
+# 与旧实现的区别：以前 `render.ts` 在通关时画一整块 `rgba(10,16,22,0.72)` 盖满全屏，
+# 玩家 / 旗杆 / 地形全被盖掉（本质是切屏）。现在这一层只画「遮罩 + 面板 + 按钮」：
+# - 底层世界由渲染器先画好，遮罩是半透明黑，游戏画面被压暗但**仍然可见**；
+# - 「再来一次」是真正的按钮，点击由 `ui.ts` 的命中函数判定，不再靠「点任意处重开」。
+#
+# 组件分工（一个界面里组件名不能重复，所以每个用途用一个不同组件）：
+# - panel    = 半透明遮罩（hit block，吃掉面板外的点击）
+# - infoPanel= 面板底色（内置，label 留空）
+# - label    = 标题（字号可控，避免 card0 那种「字号随面板高度放大」的挤压）
+# - statusText = 统计行（金币 / 生命）
+# - primaryButton = 「再来一次」
+
+layer overlay
+
+region mask fill
+put panel size fill hit block style fillColor="rgba(0,0,0,0.55)"
+
+# 面板：居中，占高 32%、宽 80%
+region dialog fill column justify center align center
+put infoPanel size 32% cross 80% style label=""
+
+# 面板内容：标题 / 统计 / 按钮（竖直居中排在面板里）
+region dialogBody fill column justify center align center gap 2%
+put label size 9% hit none style text="到达终点！" fontSize=28 align=center color="#edf4ee"
+put statusText size 6% hit none style label="金币 0/6 · 生命 3" tone=light
+put primaryButton size fixed 52 cross 60% style label="再来一次"

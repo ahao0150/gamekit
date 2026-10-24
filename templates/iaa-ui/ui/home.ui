@@ -1,0 +1,32 @@
+# 主界面（可抄样板）：背景面板 + 标题 + 分数进度 + 一个按钮
+#
+# 语法真源：docs/ui-syntax.md（v0.5）。三条要点：
+# 1. `put` 的第一个词是**组件名**（必须已在注册表里，见 src/app/ui-registry.ts），
+#    不能自造名字；同一个组件名在一个界面里只能出现一次（rects 以组件名为键）。
+# 2. 布局是约束不是坐标：只有 region 切分（top / bottom / fill）+ 尺寸约束，
+#    换屏型不用改这一行。
+# 3. `layer base` 是普通流；`layer overlay` 的每个 region 是整屏坐标系（靠
+#    justify / align / pad 定位），用来把文字压在面板上。
+#
+# 改动建议：先改这里的文案 / 区域比例，再跑 `ui.check` 看两视口；数值不要手算。
+
+layer base
+
+# 顶部品牌带 26%：panel 当底色
+region head top 26% column justify center align stretch pad-x 8%
+put panel size fill
+
+# 中部主体：吃掉剩余高度，进度条在垂直方向居中
+region body fill column justify center align stretch pad-x 8%
+put progress size fixed 16 cross 100% style value=0 max=10 radius=8
+
+# 底部按钮带 26%：固定 56px 的触摸高度（44px 是下限，56 更好按）
+region footer bottom 26% column justify end align stretch pad-x 10%
+put button size fixed 56 style text="点我 +1" state=normal
+
+layer overlay
+
+# 标题压在顶部品牌带上（justify start + pad-y 把文字放进 26% 的带里）
+region titleLayer fill column justify start align center pad-y 4% gap 1%
+put label size fixed 34 style text="iaa-ui 模板" fontSize=20 align=center
+put statusText size fixed 24 style label="点按钮 +1 分" tone=light

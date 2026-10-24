@@ -1,0 +1,21 @@
+{
+  "name": "ui-demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "T10 端到端 demo：三个界面全部由 .ui 描述，组件注册表 + layout() 驱动，验证从界面到三端构建的完整链路",
+  "scripts": {
+    "dev": "mg dev",
+    "build": "mg build --all",
+    "check": "mg check",
+    "test": "vitest run",
+    "verify:ui": "node tools/verify-ui.mjs",
+    "verify:runtime": "node tools/verify-runtime.mjs"
+  },
+  "dependencies": {
+    "@mg/runtime": "workspace:*"
+  },
+  "devDependencies": {
+    "@mg/cli": "workspace:*"
+  }
+}

@@ -1,0 +1,20 @@
+# 任意位置提示（T42：真浮层）——只描述叠加层，底层原样可见
+#
+# 以前这里 `layer base` 铺了整屏 infoPanel 当背景 —— 那让提示看起来像「另一个界面」，
+# 也是假的底层。现在删掉：提示就只是一个浮动小框，叠在 menu / 任何底层界面上，
+# 底层元素清楚可见（用户要的「在当前画布弹出来」）。
+#
+# 口径（docs/ui-syntax.md v0.6 §3.4）：
+# - `at <x> <y>` 是 region 的**中心点**，不是左上角；
+# - 必须配 `size <w> <h>`（缺了解析器直接报错）；
+# - 只在 `layer overlay` 里有效，且 overlay 的 `edge` 可以省略。
+
+layer overlay
+
+# 提示框：中心在 (30%, 70%)，宽 60%、高 18%，金色底
+region tip at 30% 70% size 60% 18%
+  put panel size fill style fillColor="#d9a441"
+
+# 提示文字：同一个中心点，窄一点，压在提示框上
+region tipText at 30% 70% size 50% 8%
+  put label size fill style text="+1 金币" fontSize=20 align=center color="#1a1a1a"

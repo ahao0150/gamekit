@@ -1,0 +1,10 @@
+# start: intro
+id	type	speaker	text	next	condition	set
+intro	line	旁白	村口，老槐树下站着向导。	guide		flags.metGuide=true
+guide	line	向导	往东是矿洞，但要 20 金币买火把。			
+guide	choice		买火把进洞	cave	vars.gold>=20	
+guide	choice		先去打工	work		
+guide	choice		回家	home		
+work	line	旁白	你挣到了 20 金币。	guide		vars.gold=20
+cave	end	旁白	矿洞深处闪着光……			
+home	end	旁白	平淡的一天结束了。			

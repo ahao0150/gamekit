@@ -1,0 +1,17 @@
+{
+  "title": "拼豆工坊",
+  "design": {
+    "width": 390,
+    "height": 844
+  },
+  "fit": "fill",
+  "assetsDir": "assets",
+  "atlas": {
+    "enabled": true,
+    "maxTextureSize": 2048,
+    "maxFrameSize": 1024,
+    "padding": 2,
+    "compress": "none"
+  },
+  "subpackages": {}
+}

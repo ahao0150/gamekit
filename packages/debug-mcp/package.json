@@ -1,0 +1,15 @@
+{
+  "name": "@mg/debug-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "运行时调试 MCP：把游戏内部的绘制结构 / 状态 / 截图暴露给 AI",
+  "bin": {
+    "mg-debug-mcp": "./bin/mg-debug-mcp.mjs"
+  },
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "start": "node bin/mg-debug-mcp.mjs"
+  }
+}

@@ -1,0 +1,27 @@
+# 嵌套滚动（T38）：外层 scroll 容器 + 内层 list，验证「滚轮只滚最里层」
+#
+# 结构（`.ui` 是扁平布局，嵌套靠 overlay 的 `at` 定位 + 绘制顺序表达）：
+# - base：顶部标题带（label + 返回 button）+ 外层 scroll 容器（吃掉剩余空间）
+# - overlay：内层 list，`at 50% 50%` 落在画面中心 —— 几何上被外层容器矩形包住，
+#   且后画（在上层），所以滚轮命中的是内层（见 `scrollables.ts` 的 `scrollableAt`）。
+#
+# 两个容器都是真能滚的：
+# - 外层 `scroll`：内容高 1200（渲染层按 10 条横带画，每条 120px）；
+# - 内层 `list`：20 项 × 48px = 960（数据是 `uiDataOf('nest')` 里的 ITEMS）。
+#
+# 核心用例：内层滚到 max 后继续滚 → 内层停在 max、**外层 offset 一点不动**（不接力）。
+
+layer base
+
+region head top 10% row justify space-between align center pad-x 6%
+  put label size fill style text="嵌套滚动 · 滚轮只滚最里层" fontSize=16 align=left
+  put button size fixed 92 cross 38 style text="返回" state=normal
+
+region body fill pad 4%
+  put scroll size fill style scrollTop=0 contentH=1200 bgColor="#1d2a30"
+
+layer overlay
+
+# 内层列表：中心点 = 画面中心，占 70%×30%
+region inner at 50% 50% size 70% 30% column align stretch
+  put list size fill style itemH=48 gap=0 divider=true itemColor="#2b4a52" emptyText=""

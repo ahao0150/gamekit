@@ -1,0 +1,14 @@
+{
+  "design": {
+    "width": 390,
+    "height": 844
+  },
+  "fit": "fill",
+  "assetsDir": "assets",
+  "title": "UI 链验证 Demo",
+  "subpackages": {},
+  "atlas": {
+    "enabled": true,
+    "compress": "none"
+  }
+}

@@ -1,0 +1,19 @@
+layer base
+
+region head top 30% column justify center align stretch pad-x 8%
+put panel size fill style fillColor="#F2F8F6"
+
+# 主入口：直接进「已解锁的最新一关」；关卡选择单开一屏
+region body fill column justify center align stretch pad-x 12% gap 4%
+put primaryButton size fixed 56 style label="继续拼豆"
+put secondaryButton size fixed 44 style label="关卡选择"
+put soundToggle size fixed 40 cross 100% style label="声音 开"
+
+
+layer overlay
+
+# 标题浮层钉在顶部 head 带里（overlay 的 edge 会被忽略，必须用 at + size：
+# 以前 fill + 居中时 320×568 上标题正好压在「开始拼豆」按钮上，连点击都被吃掉）
+region titleLayer at 50% 15% size 90% 24% column justify center align center gap 2%
+put label size fixed 58 hit none style text="拼豆工坊" fontSize=32 align=center color="#1B211F"
+put statusText size fixed 26 hit none style label="像素拼豆 + 熨烫定型" tone=ink

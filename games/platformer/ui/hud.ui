@@ -1,0 +1,28 @@
+# 平台跳跃 HUD（T45）：叠在游戏画面上的信息层
+#
+# 关键约束（这就叫「真浮层」）：
+# 1. **不 clear、不画全屏背景** —— 底层游戏世界由渲染器先画好，这里只画 HUD 元素；
+# 2. 顶部只有一条 12% 半透明黑带，让白字在任何地形上都读得出来，但不会盖住游戏；
+# 3. 所有 HUD 节点 `hit none`：HUD 只显示，不抢游戏的触屏按键输入；
+# 4. 动态数值（金币 / 生命 / 进度）由 `ui.ts` 每帧注入 props —— `.ui` 里写的是初值。
+#
+# 组件名在一个界面里只能出现一次，所以三块信息用了三个不同组件：
+# coinBadge（金币）/ label（生命，字号可控）/ statusText（关卡）。
+
+layer base
+
+# 顶部信息带 12%
+region band top 12% column align stretch
+put panel size fill style fillColor="rgba(10,16,22,0.55)"
+
+layer overlay
+
+# 第一行：金币（左）+ 生命（右）
+region row fill row justify space-between align start pad-x 5% pad-y 2%
+put coinBadge size fixed 120 cross 30 hit none style label="金币 0"
+put label size fixed 110 cross 26 hit none style text="生命 ×3" fontSize=16 align=right color="#edf4ee"
+
+# 第二行：关卡 + 金币收集进度条（每吃一枚金币进度前进）
+region row2 fill row justify space-between align start pad-x 5% pad-y 7%
+put statusText size fixed 120 cross 38 hit none style label="关卡 1/1" tone=light
+put progress size 55% cross 10 hit none style value=0 max=6 radius=5 trackColor="rgba(237,244,238,0.25)" fillColor="#f0c94a"

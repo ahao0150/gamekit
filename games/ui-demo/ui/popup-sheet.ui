@@ -1,0 +1,22 @@
+# 底部抽屉（T42：真浮层）——只描述叠加层；底层由调用方原样画
+#
+# 以前这里 `layer base` 画了个「底层按钮（被遮罩挡住）」，是伪造的底层；
+# 现在删掉，真正的底层（menu / gallery）由渲染层先画，抽屉叠在它上面。
+#
+# 写法（`.ui` 没有嵌套，overlay 的 region 一律整屏坐标系）：
+# 1. 遮罩：`panel fill` + `hit block` + `rgba(0,0,0,0.55)`，节点名 `panel`，
+#    ACTION_OF 绑「关闭抽屉」（点遮罩 = 关）；
+# 2. 抽屉底色：`justify end` + `infoPanel size 45%` 压到屏幕底部，`pad-x 4%` 留边；
+# 3. 抽屉内容：另一个 overlay region，`justify end` 把标签 + 按钮压在抽屉靠下处。
+
+layer overlay
+
+region mask fill
+put panel size fill hit block style fillColor="rgba(0,0,0,0.55)"
+
+region sheet fill column justify end align stretch pad-x 4%
+put infoPanel size 45% style label=""
+
+region sheetBody fill column justify end align center gap 2% pad 4%
+put label size 45% style text="底部抽屉（45% 高）" fontSize=17 align=center
+put primaryButton size fixed 48 cross 56% style label="关闭"

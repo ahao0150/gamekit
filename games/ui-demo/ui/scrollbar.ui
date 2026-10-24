@@ -1,0 +1,12 @@
+# 滚动条组件 demo（T20）
+#
+# 左内容右滚动条：body 是 row，list 吃满剩余宽，scrollbar 固定 8px 贴右。
+# `value` / `viewport` 由游戏传（当前滚动比例、可视内容比例），opacity 由 tween 淡出。
+# 尺寸写 fixed：离线 mg.ui.check 不接组件注册表，auto 取不到 measure() 会报 0×0。
+
+region head top 10% row align center pad-x 5%
+put label size fill cross fixed 24 style text="包裹列表" fontSize=18 align=left
+
+region body fill row align stretch pad-x 6% gap 2%
+put list size fill style itemH=56 gap=8 virtual=true divider=true emptyText="暂无包裹"
+put scrollbar size fixed 8 style value=0.4 viewport=0.25 thickness=4

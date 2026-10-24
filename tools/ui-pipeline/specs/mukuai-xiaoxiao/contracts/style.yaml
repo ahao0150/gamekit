@@ -1,0 +1,31 @@
+schema_version: 1
+project_id: mukuai-xiaoxiao
+status: draft
+platform:
+  target: mini-game
+  orientation: portrait
+  reference_size: [390, 844]
+visual:
+  theme: warm-wood-casual
+  keywords: [wood, soft-round, flat-2d, cozy, no-text-on-asset]
+  mood: casual IAA, soft toy wood
+  materials: [light wood grain, cream lacquer, soft shadow]
+  lighting: { direction: top-left, softness: medium }
+colors:
+  primary: "#C4783A"      # 主按钮琥珀木
+  secondary: "#8B6914"    # 次按钮深木
+  accent: "#E8C07A"
+  background: "#2a2018"   # 与现 .ui fillColor 对齐
+  panel: "#3D2E22"
+  ink: "#2a2018"
+  light: "#FFF8EE"
+  disabled: "#6B5A4A"
+geometry:
+  capsule: { w: 336, h: 126, cap: 63, mid: 8 }  # 对齐 runtime DEFAULT_CAPSULE
+  panel_nine_slice_default: 60                  # 源像素；2x 图上量
+  radius_hint_px: 48
+rules:
+  - 素材禁止文字 / Logo / 水印
+  - 绿幕或纯色底便于抠透明；交付必须真 RGBA
+  - 胶囊图必须严格 336×126，否则 drawCapsule 直接 false 回落纯色
+  - 九宫格 JSON 字段顺序 left/top/right/bottom（勿用上游数组顺序）

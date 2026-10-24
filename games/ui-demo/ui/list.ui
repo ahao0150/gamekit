@@ -1,0 +1,11 @@
+# 列表组件 demo（T16）：虚拟渲染 + 分割线 + 空列表文案
+#
+# 只描述布局；组件行为在 packages/runtime/src/core/ui/widgets/list.ts。
+# 真实数据（items / renderItem）由游戏在 DrawDeps.data 里注入，这张文件不接游戏。
+# 离线 ui.check / preview 只看几何：list 是 fill，撑满 body。
+
+region head top 10% row align center pad-x 5%
+put label size fill cross fixed 24 style text="包裹列表" fontSize=18 align=left
+
+region body fill column align stretch pad-x 4% gap 2%
+put list size fill style itemH=56 gap=8 virtual=true divider=true emptyText="暂无包裹"

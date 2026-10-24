@@ -1,0 +1,27 @@
+{
+  "name": "gamekit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "mg": "node packages/cli/bin/mg.mjs",
+    "typecheck": "tsc --noEmit --pretty false -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "pnpm -r --filter \"./packages/*\" run build",
+    "lint": "node tools/lint.mjs",
+    "verify-platform": "node templates/iaa-simple/tools/verify-platform.mjs",
+    "doctor": "node packages/cli/bin/mg.mjs doctor",
+    "shots": "node tools/shots/shots.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "puppeteer-core": "25.15.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}

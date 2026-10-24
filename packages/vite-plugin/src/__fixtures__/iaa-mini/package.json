@@ -1,0 +1,8 @@
+{
+  "name": "fixture-iaa",
+  "private": true,
+  "mg": {
+    "design": { "width": 960, "height": 640 },
+    "subpackages": { "city": ["bg/city_"] }
+  }
+}

@@ -1,0 +1,32 @@
+# 拼豆盘面页 · 第 2 关起（T65：三个激励视频入口，都带次数与禁用态）
+#
+# 与 board.ui 的**唯一差别**是 toolBar 里多了三个真按钮：
+#   提示（每关 ≤3） / 续时 +30s（每关 1） / 扩位 +1（每关 1）
+# 文案与 disabled 由 layout.ts 的 dynamicProps 注入（次数见 items.ts 的 AD_LIMITS）。
+# 其余区域与 board.ui 完全一致 —— 改布局时两个文件一起改。
+
+layer base
+
+region head top 9% column justify center align stretch
+put panel size fill style fillColor="#F2F8F6"
+
+region hudLayer top 9% column justify center align stretch pad-x 6%
+put hudSlot size fill hit none
+
+region selfDraw fill column justify center align stretch
+put boardArea size fill hit none
+
+region toolBar bottom 11% row justify center align center pad-x 3% gap 2%
+put secondaryButton size fill cross 40 style label="提示 3"
+put primaryButton size fill cross 40 style label="续时 +30s"
+put button size fill cross 40 style text="扩位 +1" state=normal
+
+layer overlay
+
+# HUD 文字必须叠在 HUD 带上：base 层的 top 是**累加**语义（head 9% + hudLayer 9% =
+# 文字落到 76..152），所以挪到 overlay 用 at 定位到 head 中心（4.5% 视口高）。
+region hudText at 50% 4.5% size 100% 9% column justify center align stretch pad-x 6%
+put label size fixed 24 hit none style text="时间 90s · 归位 0/0" fontSize=14 align=center color="#1B211F"
+
+region homeLayer fill column justify start align end pad-y 2% pad-x 4%
+put toast size fixed 28 cross 22% style text="放弃" textSize=13

@@ -1,0 +1,17 @@
+# 游戏失败浮层（T45）：与 win.ui 同一套结构，换文案与动作语义
+#
+# 同样只画叠加层：遮罩半透明（游戏画面仍可见）+ 居中面板 + 「重新开始」按钮。
+# 组件分工同 win.ui：panel=遮罩 / infoPanel=面板底 / label=标题 / statusText=统计 / 按钮。
+
+layer overlay
+
+region mask fill
+put panel size fill hit block style fillColor="rgba(0,0,0,0.55)"
+
+region dialog fill column justify center align center
+put infoPanel size 30% cross 80% style label=""
+
+region dialogBody fill column justify center align center gap 2%
+put label size 9% hit none style text="生命用完" fontSize=28 align=center color="#edf4ee"
+put statusText size 6% hit none style label="金币 0 · 按按钮重开" tone=light
+put primaryButton size fixed 52 cross 60% style label="重新开始"

@@ -1,0 +1,12 @@
+{
+  "name": "@mg/economy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "数值配表加载、校验、离线收益与成长模拟（纯函数，无 DOM）",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

@@ -1,0 +1,15 @@
+# 交互型展示组件 demo（T18）：slider / switch / checkbox / radio
+#
+# 四个组件都是「纯绘制 + 状态由游戏传」：这里只验证布局占位与参数校验。
+# 尺寸写 fixed 而不是 auto：离线 mg.ui.check 不接组件注册表，auto 取不到 measure() 会报 0×0
+#（T15/T17 同理）。switch / checkbox / radio 需要固定宽，所以写 align start 覆盖父级的 stretch
+#（stretch 会忽略 cross）。
+
+region head top 10% row align center pad-x 5%
+put label size fill cross fixed 24 style text="设置" fontSize=18 align=left
+
+region body fill column align stretch justify center pad-x 6% gap 4%
+put slider size fixed 40 style value=0.5 knobSize=20
+put switch size fixed 30 cross fixed 52 align start style on=true
+put checkbox size fixed 24 cross fixed 24 align start style checked=true
+put radio size fixed 24 cross fixed 24 align start style checked=false

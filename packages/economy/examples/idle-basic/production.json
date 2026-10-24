@@ -1,0 +1,17 @@
+[
+  {
+    "id": "farm",
+    "perHour": 12,
+    "unlockLevel": 1
+  },
+  {
+    "id": "workshop",
+    "perHour": 35,
+    "unlockLevel": 2
+  },
+  {
+    "id": "mine",
+    "perHour": 90,
+    "unlockLevel": 2
+  }
+]

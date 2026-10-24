@@ -1,0 +1,28 @@
+# 网格背包（T35）：通用 grid 组件接进游戏
+#
+# 为什么用 grid 而不是 list：背包是二维的（每行 4 个格子），list 是一维列表。
+# 两者共用同一套滚动口径（gridWindow 复用 listWindow 的 clamp/floor/ceil），
+# 所以同一个 scrollTop 在列表和网格里滚到的位置一致。
+#
+# 组件名在同一个界面里只能出现一次（rects 以组件名为键）：label / grid / button 各一个。
+#
+# 4 列 × 20 件 = 5 行；cellH 88 + gapY 6 → 内容高 464px。
+# 390×844 下主体带高约 574px，装得下（这一视口不需要滚动）；
+# 320×568 下主体带只剩 386.24px → 内容 464 超出 77.76px，必须能滚到最后一行（T38 验收）。
+# cellH 从 72 调到 88 不只是为了「能滚」：390 宽下 cellW 85.2，格子接近正方形，
+# 手指点得准；原来 72 高在窄屏上会留一堆空白却仍装不下。
+
+layer base
+
+# 顶部标题带 12%
+region header top 12% row justify center align center
+  put label size fill style text="网格背包 · 20 件" fontSize=18 align=center
+
+# 主体：吃掉剩余空间，pad 4%，grid 撑满
+# virtual=true：只画可见行（20 件时看不出差别，但这是 1000 件也不卡的写法）
+region body fill pad 4%
+  put grid size fill style cols=4 cellH=88 gapX=6 gapY=6 virtual=true
+
+# 底部返回带 12%
+region footer bottom 12% row justify center align center
+  put button size 60% cross 44 style text="返回" state=normal

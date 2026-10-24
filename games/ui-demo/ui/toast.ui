@@ -1,0 +1,13 @@
+# toast 组件 demo（T17）：overlay 层居中的轻提示
+#
+# 位置由 .ui 决定（overlay 整屏坐标系 + justify/align center），组件只管自己这块长什么样。
+# 淡入淡出由游戏用 tween 改 style opacity，组件每帧照画当前值。
+#
+# 尺寸写 fixed 而不是 auto：离线 mg.ui.check 不接组件注册表，auto 取不到 toast.measure()
+# 会报 0×0（T15 的 widgets.ui 同理）。这里 220×44 就是 toast.measure() 对这句文案的真实
+# 返回值（2×16 padding + 文字 156 + 图标 24 + 间距 8 = ceil 220，高固定 44），两者一致。
+
+layer overlay
+
+region toastLayer fill column justify center align center
+put toast size fixed 44 cross fixed 220 style text="包裹已送达 +12 积分" textSize=16 icon="icons/coin" opacity=1

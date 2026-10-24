@@ -1,0 +1,17 @@
+# 通用组件库 demo（T15）：八个通用件各出现一次
+#
+# 只描述布局；组件行为在 packages/runtime/src/core/ui/widgets/。
+# 这张文件不接游戏（不在 src/app 的 import 里），用于离线 ui.check / preview，
+# 以及「组件名必须在注册表里」那条单测（离线 ui.check 不接注册表）。
+
+region head top 12% row align center pad-x 5% gap 2%
+put avatar size fixed 48 cross 48 style shape=circle
+put label size fill cross fixed 24 style text="通用组件库" fontSize=18 align=left
+put badge size fixed 24 cross 24 style text="99+" dotSize=10
+
+region body fill column justify center align stretch pad-x 6% gap 2%
+put progress size fixed 16 style value=64 max=100 showText=true
+put panel size fixed 120 style image="ui/panel" slice=60
+put button size fixed 56 style state=normal text="开始游戏"
+put divider size fixed 1 style direction=horizontal
+put icon size fixed 32 cross 32 align center style image="icons/star" size=32

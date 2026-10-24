@@ -1,0 +1,66 @@
+{
+  "start": "intro",
+  "nodes": {
+    "intro": {
+      "id": "intro",
+      "dialogue": "旁白：村口，老槐树下站着向导。",
+      "choices": [
+        {
+          "text": "继续",
+          "next": "guide"
+        }
+      ],
+      "set": {
+        "flags": {
+          "metGuide": true
+        },
+        "vars": {}
+      }
+    },
+    "guide": {
+      "id": "guide",
+      "dialogue": "向导：往东是矿洞，但要 20 金币买火把。",
+      "choices": [
+        {
+          "text": "买火把进洞",
+          "next": "cave",
+          "when": "vars.gold>=20"
+        },
+        {
+          "text": "先去打工",
+          "next": "work"
+        },
+        {
+          "text": "回家",
+          "next": "home"
+        }
+      ]
+    },
+    "work": {
+      "id": "work",
+      "dialogue": "旁白：你挣到了 20 金币。",
+      "choices": [
+        {
+          "text": "继续",
+          "next": "guide"
+        }
+      ],
+      "set": {
+        "flags": {},
+        "vars": {
+          "gold": 20
+        }
+      }
+    },
+    "cave": {
+      "id": "cave",
+      "dialogue": "旁白：矿洞深处闪着光……",
+      "end": true
+    },
+    "home": {
+      "id": "home",
+      "dialogue": "旁白：平淡的一天结束了。",
+      "end": true
+    }
+  }
+}

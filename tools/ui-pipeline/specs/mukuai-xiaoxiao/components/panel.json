@@ -1,0 +1,23 @@
+{
+  "schema": "mini-game-ui-v1",
+  "name": "panel",
+  "asset": "panel.png",
+  "imageSize": {
+    "width": 512,
+    "height": 340
+  },
+  "nineSlice": {
+    "left": 56,
+    "top": 56,
+    "right": 56,
+    "bottom": 56
+  },
+  "measure": {
+    "method": "crop-opaque+alpha-edge-walk+manual-symmetry; preview stretch x3",
+    "passed": true,
+    "source": "panel_raw.png via gamedev/gen-image (codex)"
+  },
+  "gamekitKey": "ui/panel",
+  "draw": "nineSlice",
+  "styleHint": "put panel … style image=\"ui/panel\" slice=56"
+}

@@ -1,0 +1,29 @@
+{
+  "slug": "pindou-workshop",
+  "screenPath": "state.screen",
+  "start": "primaryButton",
+  "maxSteps": 5,
+  "steps": [
+    {
+      "name": "board",
+      "tap": { "start": true },
+      "expect": { "screen": "board" },
+      "timeoutMs": 5000
+    },
+    {
+      "name": "drag",
+      "drag": {
+        "from": { "geom": "pieces" },
+        "to": { "key": "boardArea", "rel": [0.05, 0.68] }
+      },
+      "expect": {
+        "any": [
+          { "path": "state.pieces", "op": "count", "where": { "path": "loc.t", "eq": "temp" }, "gte": 1 }
+        ]
+      },
+      "timeoutMs": 9000,
+      "tapMs": 600
+    }
+  ],
+  "resultButtons": ["primaryButton", "secondaryButton"]
+}

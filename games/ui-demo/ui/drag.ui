@@ -1,0 +1,16 @@
+# 拖拽 demo（T22）：overlay 层悬浮按钮 —— 悬浮元素怎么写
+#
+# 悬浮元素三件套：
+# ① `layer overlay` —— 独立整屏坐标系，不参与 base 的流，多个 overlay region 天然重叠；
+# ② region 用 `fill` + `justify` / `align` 把元素钉到需要的角（这里是右下角）；
+# ③ put 用 fixed 尺寸（离线 mg.ui.check 不接注册表，auto 取不到 measure() 会报 0×0）。
+#
+# 拖拽 / 吸附状态机在 core/ui/drag.ts 与 core/ui/snap.ts（纯函数，游戏侧自己接线）。
+
+region head top 10% row align center pad-x 5%
+put label size fill cross fixed 24 style text="拖拽演示" fontSize=18 align=left
+
+layer overlay
+
+region floatLayer fill row justify end align end pad 4%
+put button size fixed 56 cross fixed 56 style text="拖" state=normal

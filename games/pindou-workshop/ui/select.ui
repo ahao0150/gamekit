@@ -1,0 +1,16 @@
+layer base
+
+region head top 10% column justify center align stretch pad-x 6%
+put panel size fill style fillColor="#F2F8F6"
+
+region body fill column justify center align stretch pad-x 5%
+put grid size fixed 240 cross 100% style cols=3 cellH=64 gapX=8 gapY=8 virtual=false
+
+region footer bottom 9% column justify center align stretch pad-x 12%
+put button size fixed 44 style text="回首页" state=normal
+
+layer overlay
+
+region titleLayer fill column justify start align center pad-y 3%
+put label size fixed 30 hit none style text="选择图案" fontSize=20 align=center color="#1B211F"
+put statusText size fixed 22 hit none style label="12 款 · 数字为关卡号" tone=ink

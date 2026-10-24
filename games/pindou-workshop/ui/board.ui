@@ -1,0 +1,34 @@
+# 拼豆盘面页 · 第 1 关（T65：首关不放任何广告入口）
+#
+# 结构（T63 定稿，别改回手算）：
+#   head 9%      HUD 带（panel 铺满视口宽）
+#   hudLayer 9%  HUD 文字（同宽）
+#   boardArea    自绘区 fill：内部 splitRows([0.6, 0.1, 0.25]) = 盘面 / 临时位 / 色块池
+#   toolBar 9%   底部道具带：**这一屏故意留空**（首关不给广告入口），但保留这条带，
+#                免得 boardArea 往下长、两个变体的几何不一致
+# 四者互不重叠由布局 + 测试里的 findOverlaps 保证（不靠肉眼）。
+
+layer base
+
+region head top 9% column justify center align stretch
+put panel size fill style fillColor="#F2F8F6"
+
+region hudLayer top 9% column justify center align stretch pad-x 6%
+put hudSlot size fill hit none
+
+region selfDraw fill column justify center align stretch
+put boardArea size fill hit none
+
+region toolBar bottom 9% row justify center align center pad-x 4% gap 3%
+put toolBar size fill hit none
+
+layer overlay
+
+# HUD 文字必须叠在 HUD 带上：base 层的 top 是**累加**语义（head 9% + hudLayer 9% =
+# 文字落到 76..152），所以挪到 overlay 用 at 定位到 head 中心（4.5% 视口高）。
+region hudText at 50% 4.5% size 100% 9% column justify center align stretch pad-x 6%
+put label size fixed 24 hit none style text="时间 90s · 归位 0/0" fontSize=14 align=center color="#1B211F"
+
+# 放弃：overlay 里的一枚小 chip（toast 组件有底色 + 文字，命中默认 self）
+region homeLayer fill column justify start align end pad-y 2% pad-x 4%
+put toast size fixed 28 cross 22% style text="放弃" textSize=13

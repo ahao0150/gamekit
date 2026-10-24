@@ -1,0 +1,32 @@
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.DS_Store
+Thumbs.db
+.vite/
+games/*/dist/
+templates/*/dist/
+
+# 浏览器缓存（vite/playwright/chrome profile，单个可到几百 MB）
+.cache/
+
+# 美术原图 / 样张 / 预览：只留 assets/ 下正式素材，artifacts/ 不进库
+games/*/artifacts/
+
+# 构建与验收产物：截图、动效帧、报告 JSON、三端 build 输出
+games/*/out/
+games/*/tools/out/
+templates/*/tools/out/
+
+# 仓库根的验收产物与中间产物（截图 / 诊断脚本 / 线框图 / 美术样张）
+out/
+artifacts/
+
+# 外部探针产物（验证文档质量用的，不是团队作品；留在本地参考，不进库）
+games/color-pop/
+games/flip-pairs/
+
+# 本地部署暂存（由 build/web + cover 生成，不进库）
+games/*/deploy-web/
