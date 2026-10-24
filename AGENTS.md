@@ -129,6 +129,11 @@ host:port），默认不用 `localhost`：双栈机器上同一个端口的 IPv4
 - 禁止用 `any` 绕过类型（需要时用 `unknown` + 收窄）。
 - 禁止 `import()` 动态导入与代码分割（小游戏不支持）。
 - 禁止把资源交给 Vite 的 asset 管线处理（小游戏没有 `fetch` / `new URL`）。
+- 禁止在手绘层写死 UI 坐标：按钮 / HUD / 面板的位置一律由 `.ui` 的约束算出
+  （`top/bottom/fill` + `size/cross/align`）。`fit: contain` 时画布比屏幕窄
+  （320 屏只有约 262），`{ x: 24, y: 700 }` 这类绝对坐标会让元素画到画布外；
+  命中矩形必须从 layout 结果派生，**画与点同源**。实录见 `docs/ui-syntax.md`
+  附录「位置不要写死坐标」。
 - 禁止「先跑起来再说」的临时代码进 `main`。
 
 ## 8. 报告格式

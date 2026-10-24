@@ -503,3 +503,62 @@ region body fill column align stretch pad-x 6% gap 2%
 put progress size fixed 16 style value=64 max=100 showText=true
 put list     size fill style itemH=56 gap=8 virtual=true divider=true
 ```
+
+---
+
+## 附：位置不要写死坐标（T80 实录）
+
+游戏里的按钮 / HUD / 浮层，**位置一律由 `.ui` 的约束算出**，不要在手绘层写
+`{ x: 24, y: 700, w: 96 }` 这种绝对坐标。
+
+### 症状
+
+`games/platformer` 的左 / 右 / 跳三个触屏按键，原先写在 `render.ts` 里：
+
+```ts
+export const TOUCH = {
+  left:  { x: 24,  y: 700, w: 96, h: 96 },
+  right: { x: 136, y: 700, w: 96, h: 96 },
+  jump:  { x: 278, y: 680, w: 96, h: 96 },
+};
+```
+
+在 390×844 的 design 尺寸下画得正好。但 `fit: contain` 时**画布比屏幕窄**：
+
+| 屏幕 | 画布（contain 后） | 结果 |
+|---|---|---|
+| 390×844 | 390×844 | 正常 |
+| 320×568 | **约 262×568** | 按钮 `y = 700` 直接落在画布外，只见上半截 |
+| PC 预览 iframe（约 348×704） | 348×704 | 同上，底部被裁 |
+
+命中表与绘制共用这同一份写死坐标，所以「画在哪」和「点在哪」虽然一致，但**两者一起错**
+——手指点不到任何按钮。
+
+### 改法
+
+1. **位置交给 `.ui`**：新增 `ui/controls.ui`，`region ... bottom 22% row justify space-between
+   align end pad-x 4%` + 三个 `put`，尺寸 `size fixed 76 cross 76`；
+2. **画与命中同源**：`ui.ts` 导出 `touchEntriesOf(rects)`，从 layout 解出来的 `rects`
+   派生 `HitEntry[]`（不再有第二处算坐标）；
+3. **每帧喂给输入层**：`input.setEntries(...)`，指针事件用最新那份表；
+4. **手绘层删干净**：`render.ts` 不再画按钮，`TOUCH` 常量删除。
+
+### 两个数字要记住
+
+- **按钮尺寸不能想当然**：三个 96 的圆要 288px，而 320 屏的画布只有约 262 —— 放不下，
+  第三个必然溢出。改成 76（三个 228）才留得住余量。
+- **`fit: contain` 下 `screen.width` 是画布的 CSS 显示宽度（262），不是窗口宽度（320）**。
+  按 390 算、实际画在 262 上，误差 128px 起步。
+
+### 可复用的判据
+
+- `.ui` 里出现的组件位置只允许 `top/bottom/fill` + `size/cross/align/justify`；
+- 命中矩形**只能**来自 layout 结果，不允许别处再算一遍；
+- 加一条测试：**任何视口下关键 UI 的 `rect` 必须完整落在 viewport 内** ——
+  `rect.x >= 0 && rect.y >= 0 && rect.x + rect.w <= viewport.width && rect.y + rect.h <= viewport.height`。
+  `games/platformer/src/app/ui.test.ts` 的「触屏按键：任何视口下都完整落在画布内」就是这条，
+  它锁的正是这个 bug。
+
+> 这类缺陷**测试守不住、肉眼一眼就能看出**：当时 1293 条测试全绿，没人发现按钮跑出画布。
+> 所以做 UI 改动时，跑完测试**必须看截图**，别只看断言。
+
