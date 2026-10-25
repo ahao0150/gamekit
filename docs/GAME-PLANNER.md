@@ -69,6 +69,9 @@
 - [ ] `games/<name>/PRD.md` 满足 [`GAME-WORKFLOW.md`](GAME-WORKFLOW.md) §1  
 - [ ] `PRD.md` 写了**视觉小节**（屏数 / 调色板 8 色 / 字号层级 / 桌面居中纸卷 / 反馈与禁用态 / 素材预算），
       格式见 [`VISUAL-SKELETON.md`](VISUAL-SKELETON.md) §3 —— **只写「国风」两个字不合格**  
+- [ ] `PRD.md` 写清了**主界面是一个什么场景**（不是「一个页面」）：玩家站在哪、有哪些物件、
+      物件之间什么关系、操作就地还是切屏。判据见 [`VISUAL-SKELETON.md`](VISUAL-SKELETON.md) §0，
+      **主界面是卡片列表 = 未过门**  
 - [ ] `ART-BRIEF.md` 有文件名与尺寸；标明缺图回落  
 - [ ] 若有数值：`levels` / `production` / `prices` TSV 骨架 + 计划 `simulate.mjs --days N`  
 - [ ] 若有剧情：`.story.tsv` 能过 `lint-story`  
