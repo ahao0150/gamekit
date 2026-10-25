@@ -63,6 +63,10 @@
 轻量至少勾 Concept + Top + PRD + ART-BRIEF + HANDOFF；完整再勾 Architecture + Systems。
 
 - [ ] Concept：一句话可复述；非目标 ≥ 4；核心幻想一句  
+- [ ] **场景三问**（[`VISUAL-SKELETON.md`](VISUAL-SKELETON.md) §0.1）：
+      ① 核心动作发生在一个什么**地方**？② 玩家在这些地方之间**走**吗？③ 每次去会不会碰到**不一样的事**？
+      用一句话说出「我在〔地点〕做〔动作〕」——**说不出来就换玩法，或给玩法加一层能承载信息的空间壳**。
+      带着「三次表单提交」式的玩法进 Top Design，做出来必然「像点开 app 做问卷」，玩着累。  
 - [ ] Top Design：循环图（+ 若有则资源流）；验证标准非空；不做与 Concept 一致  
 - [ ] Architecture（完整）：P0 均有输入/输出；MVP ≤ 7 步  
 - [ ] Systems（完整）：每 P0 有负责/不负责 + P0 闭环 + 验证问题  
