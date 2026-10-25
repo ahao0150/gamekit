@@ -1,6 +1,6 @@
 # 游戏策划智能体流程（game-planner）
 
-> 给 AI / 维护者：在**写代码之前**把玩法想清楚。方法论来自分层 GDD（Concept → Top → Architecture → Systems）+ 本仓库 [`GAME-WORKFLOW.md`](GAME-WORKFLOW.md)。  
+> 给 AI / Chief：在**写代码之前**把玩法想清楚。方法论来自分层 GDD（Concept → Top → Architecture → Systems）+ 本仓库 [`GAME-WORKFLOW.md`](GAME-WORKFLOW.md)。  
 > **真源只要扁平 Markdown / TSV**；禁止把深嵌套 JSON 当策划编辑面。数值进 `@mg/economy` TSV，剧情进 `@mg/story` `.story.tsv`。
 
 空模板：[`docs/templates/game-planner/`](templates/game-planner/)。  
@@ -30,7 +30,7 @@
 | `design.md` | **定稿**：定义、表、mermaid、边界、不做、验证 |
 | `analysis.md` | **过程**：若干「问题」块 = 广度 → 深度 → 综合判断；状态如 `agent_proposal` |
 
-规则：先 analysis 后 design；用户/维护者 **接受 design** 才进下一阶段。analysis 可改写，勿直接污染 design。
+规则：先 analysis 后 design；用户/Chief **接受 design** 才进下一阶段。analysis 可改写，勿直接污染 design。
 
 | 阶段 | 目录 | 只定什么 | 明确后置（本阶段不写） |
 |---|---|---|---|
@@ -72,6 +72,8 @@
 - [ ] `PRD.md` 写清了**主界面是一个什么场景**（不是「一个页面」）：玩家站在哪、有哪些物件、
       物件之间什么关系、操作就地还是切屏。判据见 [`VISUAL-SKELETON.md`](VISUAL-SKELETON.md) §0，
       **主界面是卡片列表 = 未过门**  
+      例外：玩法里没有「位置」概念的类型（文字冒险、问答、聊天模拟、卡牌图鉴、数值放置、
+      纯格子解谜）可豁免，但 PRD 要**明确写出属于豁免类型及理由**，并说明排版层级与色彩系统  
 - [ ] `ART-BRIEF.md` 有文件名与尺寸；标明缺图回落  
 - [ ] 若有数值：`levels` / `production` / `prices` TSV 骨架 + 计划 `simulate.mjs --days N`  
 - [ ] 若有剧情：`.story.tsv` 能过 `lint-story`  
