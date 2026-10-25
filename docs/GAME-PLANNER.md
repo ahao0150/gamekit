@@ -67,6 +67,8 @@
 - [ ] Architecture（完整）：P0 均有输入/输出；MVP ≤ 7 步  
 - [ ] Systems（完整）：每 P0 有负责/不负责 + P0 闭环 + 验证问题  
 - [ ] `games/<name>/PRD.md` 满足 [`GAME-WORKFLOW.md`](GAME-WORKFLOW.md) §1  
+- [ ] `PRD.md` 写了**视觉小节**（屏数 / 调色板 8 色 / 字号层级 / 桌面居中纸卷 / 反馈与禁用态 / 素材预算），
+      格式见 [`VISUAL-SKELETON.md`](VISUAL-SKELETON.md) §3 —— **只写「国风」两个字不合格**  
 - [ ] `ART-BRIEF.md` 有文件名与尺寸；标明缺图回落  
 - [ ] 若有数值：`levels` / `production` / `prices` TSV 骨架 + 计划 `simulate.mjs --days N`  
 - [ ] 若有剧情：`.story.tsv` 能过 `lint-story`  
@@ -131,6 +133,7 @@ PRD 是**一屏压缩**，不是把 design 全文粘贴进去。
 | 文档 | 关系 |
 |---|---|
 | [`GAME-WORKFLOW.md`](GAME-WORKFLOW.md) | §0 策划 → 再进 §1 PRD |
+| [`VISUAL-SKELETON.md`](VISUAL-SKELETON.md) | **PRD 的视觉部分怎么写 + 代码怎么落**（三层分工、8 色板、字号层级、验收判据、真实反例） |
 | [`START-HERE.md`](START-HERE.md) | 从零工程上手；策划先看本文 |
 | [`AGENTS.md`](../AGENTS.md) | 硬规则入口列出 planner |
 | [`ECONOMY-SAVE.md`](ECONOMY-SAVE.md) / [`STORY.md`](STORY.md) | 表与剧情真源格式 |

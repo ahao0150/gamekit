@@ -18,6 +18,8 @@
 **要写游戏 / 写界面 / 查 API 先看文档**（都在本仓库，克隆下来就有）：
 从零做一款游戏走 [`docs/START-HERE.md`](docs/START-HERE.md)；**写代码前的策划**走 [`docs/GAME-PLANNER.md`](docs/GAME-PLANNER.md)（默认轻量：Concept→Top→PRD）；`.ui` 语法真源是
 [`docs/ui-syntax.md`](docs/ui-syntax.md)；引擎 API 总表是 [`docs/ENGINE-API.md`](docs/ENGINE-API.md)。
+**PRD 的视觉小节怎么写、视觉层怎么落到代码**（三层分工、8 色板、字号层级、验收判据）看
+[`docs/VISUAL-SKELETON.md`](docs/VISUAL-SKELETON.md) —— 跳过这一步的后果是「逻辑全绿、看着像表单」。
 数值配表 / 存档 / 离线收益：[`docs/ECONOMY-SAVE.md`](docs/ECONOMY-SAVE.md)（`@mg/economy`）；
 2D 物理：[`docs/PHYSICS-GUIDE.md`](docs/PHYSICS-GUIDE.md)（官方示例 [`games/platformer`](games/platformer/)：建世界 → static 地面 → dynamic 玩家 → `setVelocity` 跳跃）；
 剧情扁平源：[`docs/STORY.md`](docs/STORY.md) · [`packages/story`](packages/story)（`@mg/story` + `lint-story.mjs` / `compile-story.mjs`）。
