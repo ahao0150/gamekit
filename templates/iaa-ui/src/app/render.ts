@@ -26,7 +26,7 @@ export const createRenderer = (
   };
   return {
     draw(ctx, view) {
-      const resolved = resolveUiData(view.data, baseDeps.data);
+      const resolved = resolveUiData(view.data, baseDeps.data ?? view.data);
       if (resolved.errors.length > 0) {
         for (const message of resolved.errors) console.error(`[mg ui data] ${message}`);
       }

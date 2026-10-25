@@ -466,6 +466,22 @@ const bound = bindComponents(parsed.spec, { registry, env: { viewport, data } })
 `layout.compute(..., data)`，模板会挂到 `ScreenLayout.data`，绘制期自动注入
 `DrawDeps.data`；若仍分两边手传，用 `resolveUiData(measure, draw)`——漏传或缺键会报中文错。
 
+> **模板曾在这里自相矛盾（2026-10-25 修）**：`templates/iaa-ui/src/app/render.ts` 的注释声称走单通道，
+> 但代码调的是 `resolveUiData(view.data, baseDeps.data)`，而 `baseDeps.data` 只有
+> `createRenderer({ data })` 显式传过才有值 —— 于是**照推荐的单通道写法写，必然报**
+> 「绘制期未传入 data，但布局期有数据」。画面不会坏（`resolveUiData` 会把布局期数据原样返回），
+> 但控制台被这条刷满，真漏传时反而看不出来。
+>
+> 正确写法（已内置到模板，`mg create` 出来的新项目自带）：
+>
+> ```ts
+> // 单通道：未显式传 drawData 时用 view.data 自身；两边都传时仍保留缺键检查
+> const resolved = resolveUiData(view.data, baseDeps.data ?? view.data);
+> ```
+>
+> 历史佐证：两个游戏曾各自手写成 `resolveUiData(view.data, view.data)` 绕过了一次——
+> 同一个坑被独立踩过两遍，说明模板不改就会一直复制下去。
+
 若你坚持分两边喂，**两边都必须传**：
 
 1. **布局期**：`bindComponents(spec, { registry, env: { viewport, data } })` 的 `env.data`
