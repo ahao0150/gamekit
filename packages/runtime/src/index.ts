@@ -12,8 +12,17 @@ export type { AdResult, AdsOptions } from './core/ads/contract';
 export { createSave, saveKeys, DEFAULT_NAMESPACE } from './core/save/index';
 
 // —— 网络（HTTP + WebSocket）：两个入口都不抛错，失败折成 NetResponse ——
-export { request, openSocket, NET_DEFAULTS, NO_RETRY, SOCKET_QUEUE_LIMIT } from './core/net/index';
+export {
+  createCancel,
+  request,
+  openSocket,
+  NET_DEFAULTS,
+  NO_RETRY,
+  SOCKET_QUEUE_LIMIT,
+} from './core/net/index';
 export type {
+  CancelSignal,
+  CancelSource,
   Heartbeat,
   HttpMethod,
   NetError,
