@@ -121,6 +121,45 @@ host:port），默认不用 `localhost`：双栈机器上同一个端口的 IPv4
 `--strict-port` 让端口被占用时**直接报错退出**（exit 1），不静默顺延 ——
 门禁与 CI 必须能确定自己打的是哪一个端口。
 
+### 6.1 已知噪音：Vite 的 `configLoader: 'native'` 警告（已统一压掉，别重复排查）
+
+此前 `pnpm dev` / `mg build` 每次都刷 200+ 行：
+
+```
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`,
+which is planned to become the default in a future major version of Vite: ...
+```
+
+**它是什么**：Vite 8 的**前瞻预检** —— 扫描「未来 native 成为默认时」会不支持的语法，
+即整棵 `vite.config.ts` 依赖树里的**无扩展名相对导入**（本仓库 **1676 处 / 464 个文件**，
+引擎 + 全部游戏）。**当前 `configLoader` 默认就是 `bundle`，功能、产物、运行时全不受影响。**
+
+**已经统一压掉**：`packages/cli/bin/mg.mjs` 在进程入口注入 `VITE_CONFIG_NATIVE_IGNORE_WARNING`。
+一处生效、覆盖所有游戏与模板，不必在任何项目里单独配置。
+想看回原警告：`MG_KEEP_VITE_CONFIG_WARNING=1 pnpm dev`。
+
+**别试图顺手「修掉」——两条看似更正确的路实测都不通**：
+
+| 做法 | 实测结果 |
+|---|---|
+| `--configLoader bundle` 显式声明 | ❌ 警告照旧 **246 条**（预检不看这个参数） |
+| 给 1676 处导入补 `.ts` | 要连带改每个 tsconfig 的 `allowImportingTsExtensions`，波及引擎与全部游戏，diff 极大 |
+
+**等 Vite 真把 native 设为默认时（那是 major 版本）再接**：届时要么按官方迁移工具成批补
+扩展名，要么继续用 `--configLoader bundle` 顶住（CLI 已支持该参数）。
+
+### 6.2 开源版专属：缺 `games/kuaidi-load` 时测试会「假红」
+
+本仓库（GitHub 开源版）**不带**《快递装车员》，但有两个测试文件在**模块顶层**静态引用它，
+`pnpm -w test` 会报 `2 failed / 1270 passed` —— **断言一条没失败**，只是文件加载时
+`ENOENT` / `Cannot find module`。已按目录存在性处理：
+
+- `vitest.config.ts`：缺该目录时把两个文件并入 `exclude`（拼在 `configDefaults.exclude` 之后，别覆盖默认值）
+- `tsconfig.json`：静态排除 `packages/runtime/src/core/ui/layout.kuaidi.test.ts`（tsc 不看 vitest 的 exclude）
+
+**完整版仓库（自带该游戏）要把 `tsconfig.json` 里那行删掉**，让类型检查恢复；
+`vitest.config.ts` 是条件判断，两边都不用改。
+
 ## 7. 禁止事项
 
 - 禁止在 runtime 里 import 游戏业务代码。

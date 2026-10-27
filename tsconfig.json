@@ -1,5 +1,13 @@
 {
   "extends": "./tsconfig.base.json",
   "include": ["packages/*/src/**/*.ts"],
-  "exclude": ["node_modules", "**/dist", "**/node_modules"]
+  "exclude": [
+    "node_modules",
+    "**/dist",
+    "**/node_modules",
+    // 这个对照测试在模块顶层静态 import 了 `games/kuaidi-load`（《快递装车员》）——
+    // 开源版仓库不带那个游戏，tsc 会报 TS2307 与一串隐式 any，而测试断言本身一条未失败。
+    // 完整版仓库（自带 games/kuaidi-load）请删掉下面这一行，让类型检查恢复。
+    "packages/runtime/src/core/ui/layout.kuaidi.test.ts"
+  ]
 }
