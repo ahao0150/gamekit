@@ -188,12 +188,8 @@ const logFailureBody = (res: NetResponse): void => {
 小游戏**没有** `AbortController` / `AbortSignal`（见 §7-4），所以用框架自带的 `createCancel()`：
 
 ```ts
-import { request } from '@mg/runtime';
-import { createCancel } from '../../../../packages/runtime/src/core/net/index'; // 见下方注
+import { createCancel, request } from '@mg/runtime';
 import type { NetService } from '@mg/runtime/platform';
-
-// 注：createCancel 还没从 @mg/runtime 的 barrel 导出（§9-6），先走引擎子路径；
-// barrel 补上之后把上面那行改成 `import { createCancel } from '@mg/runtime';`
 
 const loadProfile = (net: NetService | null, onHp: (hp: number) => void): (() => void) => {
   const cancel = createCancel();
@@ -493,8 +489,7 @@ const joinRoom = (platform: PlatformAdapter, roomId: string, onEvent: (text: str
 
 ```ts
 import { describe, expect, it } from 'vitest';
-import { request } from '@mg/runtime';
-import { createCancel } from '../../../../packages/runtime/src/core/net/index'; // 见 §9-6
+import { createCancel, request } from '@mg/runtime';
 import { createMockNet } from '@mg/runtime/mock';
 
 describe('request', () => {
@@ -614,7 +609,3 @@ it('未 open 时超过 100 条：丢最旧 + droppedCount++；close 后 send 仍
    三端通用方法以 `GET` / `POST` / `PUT` / `DELETE` 为准；需要局部更新语义时由服务端 override
    （`POST` + `X-HTTP-Method-Override`），本层不代劳。
 5. 取消**不适用于 socket**：`openSocket` 没有 `signal`，要停就连 `close()`。
-6. **`createCancel` 还没从 `@mg/runtime` 的 barrel 导出**（`packages/runtime/src/index.ts` 里只有
-   `request` / `openSocket` / 默认常量，`CancelSignal` / `CancelSource` 两个类型也没导出）。
-   §3.4 与 §8 里那一行暂时写引擎子路径；barrel 补上后改成
-   `import { createCancel } from '@mg/runtime';` 即可，其余不用动。

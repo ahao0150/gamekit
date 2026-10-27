@@ -14,6 +14,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { existsSync, readFileSync } from 'node:fs';
 import * as runtime from './index';
 
 describe('@mg/runtime barrel 对外导出', () => {
@@ -44,5 +45,38 @@ describe('@mg/runtime barrel 对外导出', () => {
     expect(typeof runtime.createSave).toBe('function');
     expect(typeof runtime.resolvePlatform).toBe('function');
     expect(typeof runtime.createDefaultUiRegistry).toBe('function');
+  });
+});
+
+/**
+ * `package.json` 的 `exports` 是**对外的第二张脸**，和 barrel 一样没有测试守着。
+ *
+ * 为什么不用「按包名 import 一下」来测：仓库内的测试**解析不了** `@mg/runtime/platform`
+ * 这类 subpath（实测 3 个 `Cannot find package`，只有 `/mock` 因为 vitest alias 能过）。
+ * 能按包名用它们的只有 `games/**`（workspace link）。所以这里改测**静态一致性**：
+ * 声明出来的每个入口都指向真实存在的文件。游戏侧「真能 import」由各游戏的 tsc 兜住。
+ */
+describe('package.json exports 契约', () => {
+  const pkgDir = new URL('..', import.meta.url);
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+    exports: Record<string, string>;
+  };
+
+  it('五个公开入口齐全（少一个 = 游戏侧 import 直接炸）', () => {
+    expect(Object.keys(pkg.exports).sort()).toEqual([
+      '.',
+      './extension',
+      './mock',
+      './platform',
+      './platform/adapters',
+    ]);
+  });
+
+  it('每个入口都指向真实存在的文件', () => {
+    const missing: string[] = [];
+    for (const [subpath, target] of Object.entries(pkg.exports)) {
+      if (!existsSync(new URL(target, pkgDir))) missing.push(`${subpath} → ${target}`);
+    }
+    expect(missing).toEqual([]);
   });
 });
