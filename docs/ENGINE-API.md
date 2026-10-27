@@ -1,6 +1,7 @@
 # gamekit 引擎 API 总表
 
-> 核对日期：2026-10-21（T43 文档修订，上一版 2026-10-20 T25）。
+> 核对日期：2026-10-21（T43 文档修订，上一版 2026-10-20 T25）；2026-10-27 增补
+> `core/net` 章节（含 `createCancel` 取消能力，按当期实现核对，其余章节日期不变）。
 > 规则：**一行一个导出**，只写「签名 + 行为 + 一行示例」，不写评价词。
 > 全部条目来自读代码（`packages/runtime/src/**`）；行为与代码不一致时以代码为准。
 >
@@ -351,6 +352,30 @@ if (pose !== null && pose.vy < 0) physics.setVelocity(player, pose.vx, -620); //
 **能力位要分清**：`can('keyboard')` 是**桌面物理键盘**（小游戏恒 false）；`can('soft-keyboard')` 才是系统输入法（web / wx / tt 都 true）。宿主缺键盘 API 时适配器不挂 `keyboard`、能力位如实为 false。
 
 web 端实现要点（`platform/web/keyboard.ts`）：造一个真 `<input>` 盖在画布对应位置（`rect` 是相对画布的逻辑像素，位置再叠画布视口偏移），`opacity: 0.01` 让它「可见但不显眼」（iOS Safari 要求真实可见才弹键盘），字号强制 ≥16px（小于它会触发页面自动缩放），`open/close` 都回调适配器的 resize 通道（软键盘会改视口高度）。
+
+## core/net —— 网络请求与 WebSocket
+
+> `core/net/`（`request` / `openSocket`）；平台传输层契约 `platform/net-contract.ts`，
+> 三端实现 `platform/{web,wechat,douyin}/net.ts`。用法、错误决策表、状态机与踩坑见 [`NETWORK.md`](NETWORK.md)。
+
+| 导出 | 签名 | 说明 |
+|---|---|---|
+| `request` | `(net: NetService \| null, opts: RequestOptions, retry?: RetryPolicy) => Promise<NetResponse<T>>` | 三端统一 HTTP；**永不抛错**，失败也是数据（`ok=false` + `error.kind`）；`net=null` 返回 `network` 失败（不可重试） |
+| `openSocket` | `(net: NetService \| null, opts: SocketOptions) => Socket` | 三端统一 WebSocket（同步返回）：状态机 / 发送队列（100 条）/ 心跳 / 可选重连 |
+| `createCancel` | `() => CancelSource` | 取消源：`{ signal, abort() }`（`abort()` 幂等）。小游戏没有 `AbortController`，取消一律走它 |
+| `NET_DEFAULTS` · `NO_RETRY` · `SOCKET_QUEUE_LIMIT` | `{ timeoutMs:8000, connectTimeoutMs:8000, reconnectBaseDelayMs:500, reconnectMaxDelayMs:8000 }` · `{ attempts:1, baseDelayMs:300, maxDelayMs:2000 }` · `100` | 默认值单一真源（实现与测试同源） |
+
+`RequestOptions`：`{ url, method?='GET', headers?, body?, timeoutMs?=8000, responseType?='json', signal? }`；`body` 传对象 / 数组自动 `JSON.stringify` 并补 `Content-Type: application/json`；`timeoutMs: 0` = 不设超时。
+`responseType: 'json' | 'text' | 'arraybuffer'`；`json` 解析失败回落原文 `text` 并给 `kind='parse'`，**空响应体算成功**（`data=null`）。`signal` 传 `createCancel().signal`：已取消 → 一个请求都不发、直接 `kind='abort'`；请求中取消 → 立刻返回且不重试。
+`RetryPolicy`：`attempts` 是**总尝试次数**（默认 1 = 不重试），退避 `min(base × 2^(n-1), max)`，只重试 `retryable`。
+
+`NetResponse<T>`：`{ ok, status, headers, data: T | null, error?: { kind: 'timeout'|'network'|'http'|'parse'|'abort', message, retryable } }`；非 2xx 时 `ok=false` 但 `data` 仍是解析后的 body（4xx 常带 `{ code, message }`）；`kind='http'` 用 `status` 区分 4xx（不重试）/ 5xx（可重试）；`abort` 与 `timeout` 是两个 `kind`，别混。
+
+`Socket`：`state`（`idle|connecting|open|closing|closed`）/ `url` / `send(data) => boolean`（`true` 立即发出，
+`false` = 已入队或丢弃）/ `on('open'|'message'|'close'|'error', cb) => () => void` / `close(code?, reason?)` /
+`sentCount` / `recvCount` / `reconnectCount` / `droppedCount`（队列满丢**最旧**）。
+`SocketOptions`：`{ url, protocols?, timeoutMs?, reconnect?, heartbeat? }`；`reconnect.maxAttempts` 默认 `0`（不重连），
+`heartbeat: { data, intervalMs }` 两个字段都必填。
 
 ## packages/economy —— 数值配表与离线收益
 
