@@ -1,3 +1,4 @@
+// @long-file 平台适配器：与微信同构但刻意不共享实现，差异（分享 channel / WASM / 静音键 / onClose 无 res）都要留在本文件里
 /**
  * 抖音小游戏平台适配器。
  *
@@ -45,6 +46,7 @@ import type { TtApi, TtCanvas, TtSystemInfo, TtTouch, TtTouchEvent, TtWebAssembl
 import { createAdService, readAdUnitIds } from './ads';
 import { createDouyinKeyboard } from './keyboard';
 import { createDouyinServices } from './services';
+import { createDouyinNet } from './net';
 import { createMiniWheel } from '../wheel-minigame';
 
 /** 抖音小游戏的全局对象。运行时不存在时为 undefined。 */
@@ -266,6 +268,8 @@ const createDouyinAdapter = (boot: PlatformBootOptions): PlatformAdapter => {
     'vibrate',
     'subpackage',
     'wasm',
+    'net',
+    'websocket',
   ]);
 
   // 键盘能力位跟着「真的拿到键盘服务」走（缺 API 的宿主如实为 false）。
@@ -287,6 +291,7 @@ const createDouyinAdapter = (boot: PlatformBootOptions): PlatformAdapter => {
     onHide: (cb: () => void) => subscribe(hideListeners, cb),
     loadImage,
     storage,
+    net: createDouyinNet(api),
     createCanvas,
     createAudio,
     ads,

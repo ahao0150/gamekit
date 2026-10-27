@@ -41,6 +41,7 @@ import { attachPointerEvents, attachWheelEvents } from './events';
 import type { PointerKind } from './events';
 import { createWebAudio } from './audio';
 import { createWebKeyboard } from './keyboard';
+import { createWebNet } from './net';
 
 /** 平台探测：**平台探测代码只准出现在这里**。 */
 export const probe = (): boolean =>
@@ -260,6 +261,8 @@ const createWebAdapter = (boot: PlatformBootOptions): PlatformAdapter => {
     'audio',
     'storage',
     'wasm',
+    'net',
+    'websocket',
   ]);
 
   return {
@@ -278,6 +281,7 @@ const createWebAdapter = (boot: PlatformBootOptions): PlatformAdapter => {
     onHide: (cb: () => void) => subscribe(hideListeners, cb),
     loadImage,
     storage,
+    net: createWebNet(),
     createCanvas,
     createAudio,
     keyboard,

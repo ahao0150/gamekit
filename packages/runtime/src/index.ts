@@ -11,6 +11,24 @@ export { createAds, DEFAULT_INTERSTITIAL_COOLDOWN_MS, DEFAULT_REWARDED_COOLDOWN_
 export type { AdResult, AdsOptions } from './core/ads/contract';
 export { createSave, saveKeys, DEFAULT_NAMESPACE } from './core/save/index';
 
+// —— 网络（HTTP + WebSocket）：两个入口都不抛错，失败折成 NetResponse ——
+export { request, openSocket, NET_DEFAULTS, NO_RETRY, SOCKET_QUEUE_LIMIT } from './core/net/index';
+export type {
+  Heartbeat,
+  HttpMethod,
+  NetError,
+  NetErrorKind,
+  NetResponse,
+  ReconnectPolicy,
+  RequestOptions,
+  ResponseType,
+  RetryPolicy,
+  Socket,
+  SocketEventMap,
+  SocketOptions,
+  SocketState,
+} from './core/net/index';
+
 // —— UI 锚点几何 ——
 export { computeRect, isInside, clampInside, insetRect, createUi, EPSILON } from './core/ui/index';
 export type { Rect, Insets, WidgetProps } from './core/ui/contract';

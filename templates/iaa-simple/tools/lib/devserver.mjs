@@ -154,10 +154,35 @@ export const ensureProject = (repoRoot, { rebuild = false } = {}) => {
     }
     return r.stdout;
   };
+  /**
+   * 给新建的项目装依赖。
+   *
+   * 为什么必须：`pnpm-workspace.yaml` 的 packages 含 `games/*`，新项目只有在
+   * `pnpm install` 之后才有指向 `packages/runtime` 的 node_modules 链接；
+   * 少了这一步，`mg build` 的 typecheck 会报 `Cannot find module '@mg/runtime'`。
+   * `mg create` 只是拷模板 + 打印下一步，不负责装依赖。
+   */
+  const installProject = () => {
+    const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+    const r = spawnSync(pnpm, ['install'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      shell: process.platform === 'win32', // .cmd 需要 shell 才能被 spawn
+    });
+    if (r.status !== 0) {
+      throw new Error(`pnpm install 失败：${r.stderr || r.stdout}`);
+    }
+  };
   // create 要在仓库根跑（它去 templates/ 找模板），build 要在游戏项目根跑
   // （build 的默认 projectRoot 就是 cwd）。
   const created = !exists(join(projectDir, 'src'));
-  if (created) run(['create', 'mg-m5'], repoRoot);
+  if (created) {
+    // **必须显式指定 iaa-simple**：本门禁读的是 `window.__mg.layout.tapButton`，
+    // 那是手写布局链（iaa-simple）的字段；`mg create` 的默认模板是 iaa-ui，
+    // 建错模板会让断言在 `layout.tapButton.x` 处崩，而且看起来像适配坏了。
+    run(['create', 'mg-m5', '--template', 'iaa-simple'], repoRoot);
+    installProject();
+  }
   run(['build', '--all'], projectDir);
   return { projectDir, created };
 };

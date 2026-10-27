@@ -1,3 +1,4 @@
+// @long-file mock 适配器：契约的每个可选能力都要在这里挂一个可编程开关（键盘/滚轮/广告/分包/WASM/网络），拆开会让「哪些能注入」散落
 /**
  * mock 平台：一个可编程的假平台。
  *
@@ -40,6 +41,8 @@ import type {
 } from '../contract';
 import { createMockKeyboard } from './keyboard';
 import { createMockWheel } from './wheel';
+import { createMockNet } from './net';
+import type { MockNet, MockNetOptions } from './net';
 import type { MockWheelControls } from './wheel';
 import {
   createMemoryStorage,
@@ -57,6 +60,8 @@ import type { MockAudioOptions, MockImageBehavior, MockPlayingAudio } from './pa
 
 export type { MockAudioOptions, MockImageBehavior, MockPlayingAudio } from './parts';
 export { createMockPlayingAudio } from './parts';
+export type { MockNet, MockNetOptions, MockNetSocket } from './net';
+export { createMockNet } from './net';
 
 /** mock 模拟出来的指针事件类型（与契约的 kind 同值）。 */
 export type MockPointerKind = 'down' | 'move' | 'up' | 'cancel';
@@ -80,6 +85,8 @@ export interface MockOptions {
   /** 激励视频结果，默认 { ok: true } */
   readonly rewarded?: RewardResult;
   readonly menuButton?: MenuButtonRect; // 系统胶囊（T47）：注入后 screen.menuButton 有值
+  /** 网络假实现（应答 / 延迟 / socket 是否自动 open），默认 200 + '{}' */
+  readonly net?: MockNetOptions;
 }
 
 /** mock 适配器 = 契约的 PlatformAdapter + 一组手动触发用的控制口子。 */
@@ -122,7 +129,7 @@ export interface MockAdapter extends PlatformAdapter, MockWheelControls {
   emitKeyboardClose(value: string): void;
 }
 
-const DEFAULT_CAPS: readonly Capability[] = ['pointer', 'storage', 'audio', 'safe-area'];
+const DEFAULT_CAPS: readonly Capability[] = ['pointer', 'storage', 'audio', 'safe-area', 'net', 'websocket'];
 
 /** 构造一个 mock 适配器。所有状态都在闭包里，没有模块级可变单例。 */
 export const createMockAdapter = (opts?: MockOptions): MockAdapter => {
@@ -164,6 +171,8 @@ export const createMockAdapter = (opts?: MockOptions): MockAdapter => {
   const loadSubpackage = createMockSubpackage();
   const wasm = createMockWasm();
   const mockKeyboard = createMockKeyboard();
+  // net 恒挂载（能力表里也恒为 true）：没有它 core/net 的单测就得自己造假平台
+  const net = createMockNet(opts?.net);
 
   // 可选成员按能力集合挂载：can() 说有，方法就一定在。
   // 用对象展开而不是事后赋值 —— 契约里 ads / wasm 是 readonly 属性。
@@ -178,7 +187,7 @@ export const createMockAdapter = (opts?: MockOptions): MockAdapter => {
     onPointer: (cb: (e: GamePointerEvent) => void) => subscribe(pointerListeners, cb),
     loadImage,
     storage,
-
+    net,
     ...(caps.has('keyboard')
       ? { onKey: (cb: (key: string, down: boolean) => void) => subscribe(keyListeners, cb) }
       : {}),

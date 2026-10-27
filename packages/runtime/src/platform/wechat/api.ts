@@ -111,6 +111,46 @@ export interface WxKeyboardResult {
   readonly value: string;
 }
 
+/** `wx.request` 的返回：注意字段是 `statusCode` / `header`（不是 fetch 的 status/headers）。 */
+export interface WxRequestResult {
+  readonly statusCode: number;
+  readonly header: Record<string, string>;
+  /** 默认受 `dataType` 影响：'json' 会被微信自行 parse，我们显式传 'text' 避免 */
+  readonly data: unknown;
+}
+
+/** `wx.request` 返回的任务句柄，可中断。 */
+export interface WxRequestTask {
+  abort(): void;
+}
+
+export interface WxRequestOptions {
+  readonly url: string;
+  /**
+   * **PATCH 不在微信的官方合法集合里**（官方只有 OPTIONS/GET/HEAD/POST/PUT/DELETE/
+   * TRACE/CONNECT）。契约保留 PATCH 是为了三端签名统一，这里如实声明、如实传下去，
+   * 基础库会走 fail —— 不自己发明 method override（那会让调用方以为能用了）。
+   */
+  readonly method?: 'OPTIONS' | 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'TRACE' | 'CONNECT' | 'PATCH';
+  readonly header?: Record<string, string>;
+  readonly data?: unknown;
+  /** 显式 'text'：微信默认 'json' 会自行 JSON.parse，解析权要收回 core */
+  readonly dataType?: 'json' | 'text';
+  readonly responseType?: 'text' | 'arraybuffer';
+  readonly success?: (res: WxRequestResult) => void;
+  readonly fail?: (err: unknown) => void;
+}
+
+/** `wx.connectSocket` 返回的 SocketTask（新式；老式全局回调在实现里不采用）。 */
+export interface WxSocketTask {
+  send(opts: { readonly data: string | ArrayBuffer }): void;
+  close(opts?: { readonly code?: number; readonly reason?: string }): void;
+  onOpen(cb: () => void): void;
+  onMessage(cb: (res: { readonly data: string | ArrayBuffer }) => void): void;
+  onClose(cb: (res: { readonly code: number; readonly reason: string }) => void): void;
+  onError(cb: (res: { readonly errMsg?: string }) => void): void;
+}
+
 /**
  * 滚轮回调（PC 微信 / 部分桌面基础库才有，手机端没有这个事件）。
  *
@@ -179,6 +219,11 @@ export interface WxApi {
 
   onShow(cb: () => void): void;
   onHide(cb: () => void): void;
+
+  /** HTTP 请求。返回 Task，可 abort。 */
+  request(opts: WxRequestOptions): WxRequestTask;
+  /** 建长连接。返回 SocketTask（新式），事件在 Task 上注册。 */
+  connectSocket(opts: { readonly url: string; readonly protocols?: readonly string[] }): WxSocketTask;
 }
 
 /** 微信的 WASM 加载器（全局 WXWebAssembly，不是 wx.* 下的成员）。 */

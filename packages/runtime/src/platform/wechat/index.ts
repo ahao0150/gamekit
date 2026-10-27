@@ -1,3 +1,4 @@
+// @long-file 平台适配器：能力挂载（画布/触摸/键盘/滚轮/广告/分包/WASM/网络）+ 事件转发集中在一处，拆开会让「can 说有、方法却缺」的风险变高
 /**
  * 微信小游戏平台适配器。
  *
@@ -44,6 +45,7 @@ import type { WxApi, WxCanvas, WxSystemInfo, WxTouch, WxTouchEvent, WxWebAssembl
 import { createAdService, readAdUnitIds } from './ads';
 import { createWechatKeyboard } from './keyboard';
 import { createWechatServices } from './services';
+import { createWechatNet } from './net';
 import { createMiniWheel } from '../wheel-minigame';
 
 /** 微信小游戏的全局对象。运行时不存在时为 undefined。 */
@@ -258,6 +260,8 @@ const createWechatAdapter = (boot: PlatformBootOptions): PlatformAdapter => {
     'safe-area',
     'audio',
     'storage',
+    'net',
+    'websocket',
     'ad-banner',
     'ad-interstitial',
     'ad-rewarded',
@@ -287,6 +291,7 @@ const createWechatAdapter = (boot: PlatformBootOptions): PlatformAdapter => {
     onHide: (cb: () => void) => subscribe(hideListeners, cb),
     loadImage,
     storage,
+    net: createWechatNet(api),
     createCanvas,
     createAudio,
     ads,

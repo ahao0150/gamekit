@@ -125,10 +125,44 @@ export interface TtWheelEvent {
   readonly timeStamp: number;
 }
 
+/** `tt.request` 的返回：字段名与微信同形（`statusCode` / `header`）。 */
+export interface TtRequestResult {
+  readonly statusCode: number;
+  readonly header: Record<string, string>;
+  /** 默认受 `dataType` 影响；我们显式传 'text' 让解析权留在 core */
+  readonly data: unknown;
+}
+
+/** `tt.request` 返回的任务句柄，可中断。 */
+export interface TtRequestTask {
+  abort(): void;
+}
+
+export interface TtRequestOptions {
+  readonly url: string;
+  /** **PATCH 不在小游戏合法集合里**（同微信），如实声明、如实传，基础库会走 fail。 */
+  readonly method?: 'OPTIONS' | 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'TRACE' | 'CONNECT' | 'PATCH';
+  readonly header?: Record<string, string>;
+  readonly data?: unknown;
+  readonly dataType?: 'json' | 'text';
+  readonly responseType?: 'text' | 'arraybuffer';
+  readonly success?: (res: TtRequestResult) => void;
+  readonly fail?: (err: unknown) => void;
+}
+
+/** `tt.connectSocket` 返回的 SocketTask（与微信同形）。 */
+export interface TtSocketTask {
+  send(opts: { readonly data: string | ArrayBuffer }): void;
+  close(opts?: { readonly code?: number; readonly reason?: string }): void;
+  onOpen(cb: () => void): void;
+  onMessage(cb: (res: { readonly data: string | ArrayBuffer }) => void): void;
+  onClose(cb: (res: { readonly code: number; readonly reason: string }) => void): void;
+  onError(cb: (res: { readonly errMsg?: string }) => void): void;
+}
+
 export interface TtApi {
   /** 第一次调用返回上屏 canvas，之后返回离屏 canvas */
-  createCanvas(): TtCanvas;
-  getSystemInfoSync(): TtSystemInfo;
+  createCanvas(): TtCanvas;  getSystemInfoSync(): TtSystemInfo;
   /**
    * 右上角胶囊位置（**未在官方文档确认字面量**：抖音小游戏文档页 JS 渲染抓不到正文；
    * 小程序侧文档站目录里有同名 API，真机采样字段与微信同形 top/right/bottom/left/width/height）。
@@ -193,6 +227,11 @@ export interface TtApi {
 
   onShow(cb: () => void): void;
   onHide(cb: () => void): void;
+
+  /** HTTP 请求（与微信同形）。 */
+  request(opts: TtRequestOptions): TtRequestTask;
+  /** 建长连接，返回 SocketTask。 */
+  connectSocket(opts: { readonly url: string; readonly protocols?: readonly string[] }): TtSocketTask;
 }
 
 /** 抖音的 WASM 加载器（全局 TTWebAssembly，与微信的 WXWebAssembly 同名不同物）。 */

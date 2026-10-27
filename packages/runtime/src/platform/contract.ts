@@ -12,6 +12,7 @@
 import type { KeyboardService } from './keyboard-contract';
 import type { ScreenInfo } from './screen-contract';
 import type { WheelEvent } from './wheel-contract';
+import type { NetService } from './net-contract';
 
 // ---------------------------------------------------------------------------
 // 能力
@@ -33,6 +34,8 @@ export type Capability =
   | 'vibrate'
   | 'subpackage' // 支持分包加载
   | 'wasm' // 支持加载 WebAssembly（微信 WXWebAssembly / 抖音 TTWebAssembly）;
+  | 'net' // HTTP 请求（三端都有，走各自平台 API）
+  | 'websocket' // 长连接（三端都有）
 
 // ---------------------------------------------------------------------------
 // 屏幕 / 画布
@@ -149,6 +152,8 @@ export type {
   KeyboardService,
 } from './keyboard-contract';
 export type { OnWheel, WheelEvent, WheelListener } from './wheel-contract';
+/** 网络传输层契约（HTTP / WebSocket），见 net-contract.ts。 */
+export type { NetService, RawNetResponse, SocketTransport } from './net-contract';
 // 屏幕 / 胶囊（T47）：类型与纯函数在 screen-contract.ts，导入路径不变。
 export { ZERO_INSETS } from './screen-contract';
 export type { Insets, MenuButtonRect, ScreenInfo } from './screen-contract';
@@ -204,6 +209,15 @@ export interface PlatformAdapter {
 
   /** 加载图片；失败返回 null，由 Game.assets 决定回落策略。 */
   loadImage(src: string): Promise<GameImage | null>;
+
+  /**
+   * 可选：网络能力（HTTP + WebSocket 传输层）。
+   *
+   * 可选成员保持向后兼容：老平台实现不加它也能编过，调用方用前先判存在
+   * （或 `can('net')`）。契约与归一化在 `./net-contract`，业务侧应当用
+   * `core/net` 的 `request()` / `openSocket()`，而不是直接碰这个成员。
+   */
+  readonly net?: NetService;
 
   readonly storage: KeyValueStore;
 
