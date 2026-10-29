@@ -23,7 +23,7 @@ export const ACTIVE_SKIN_ID: SkinId = 'glass'; // 或 'wood'
 - **牌面 / 角色 / 道具图**：各游戏自己放进 `assets/` 再生图；没有图时组件走
   `theme` 纯色回落，保证可玩。
 
-若要让负责人转美术 bot 生正式贴图，建议清单（相对游戏根，勿写本机路径）：
+若要让军师转美术 bot 生正式贴图，建议清单（相对游戏根，勿写本机路径）：
 
 1. `assets/ui/panel.png` — 九宫格面板（建议 2x，slice≈60）
 2. `assets/ui/button_normal.png` / `button_pressed.png` / `button_disabled.png`

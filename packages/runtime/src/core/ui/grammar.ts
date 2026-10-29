@@ -22,7 +22,7 @@ export { HIT_MODES, LAYER_NAMES };
 /** 命中语义（v0.5）：self 默认 / block 吃掉点击 / none 穿透。 */
 export const HIT_VALUES = HIT_MODES;
 
-export const UI_SYNTAX_VERSION = 'v0.6';
+export const UI_SYNTAX_VERSION = 'v0.7';
 
 /** 语句动词（v0.5 起 `layer` 是分段行）。`style` 不是独立行，是 `put` 的内联修饰词。 */
 export const UI_VERBS = ['region', 'put', 'layer'] as const;
@@ -56,11 +56,19 @@ export const describeRegionModifiers = (): string =>
     return `${m} <n|n%>`;
   }).join(' / ');
 
-/** `put` 行上可用的修饰词（v0.5 新增 `hit`）。 */
-export const PUT_MODIFIERS = ['size', 'cross', 'align', 'style', 'hit'] as const;
+/** `put` 行上可用的修饰词（v0.5 新增 `hit`，v0.7 新增 `aspect`）。 */
+export const PUT_MODIFIERS = ['size', 'cross', 'align', 'aspect', 'style', 'hit'] as const;
 
 /** 尺寸写法（region 高度 / `put size` / `put cross` 共用）。 */
 export const SIZE_FORMS = ['fill', 'auto', 'fixed <n>', 'ratio <r>', '<n>', '<n>%'] as const;
+
+/**
+ * `aspect` 的两种写法（v0.7）：纯数字 `1`，或宽高比 `16:9`。
+ *
+ * 两者都折成 **`w / h`** 并保留四位小数（`16:9` → `1.7778`）；`<= 0` 与 `1:0`
+ * 这类写法在词法层就报错（带行号）。
+ */
+export const ASPECT_FORMS = ['<r>', '<w>:<h>'] as const;
 
 /** 长度写法（region 高度 / `gap` / `pad*`）。 */
 export const LENGTH_FORMS = ['<n>', '<n>%'] as const;
@@ -111,6 +119,8 @@ export interface UiGrammar {
   readonly put: {
     readonly modifiers: readonly string[];
     readonly sizes: readonly string[];
+    /** `aspect` 的两种写法（v0.7）：`<r>` / `<w>:<h>`，都折成 `w / h` */
+    readonly aspects: readonly string[];
     readonly styleValues: readonly string[];
     readonly hits: readonly string[];
   };
@@ -131,7 +141,13 @@ export const describeGrammar = (): UiGrammar => ({
     alignValues: ALIGNS,
     justifyValues: JUSTIFY_VALUES,
   },
-  put: { modifiers: PUT_MODIFIERS, sizes: SIZE_FORMS, styleValues: STYLE_VALUE_TYPES, hits: HIT_VALUES },
+  put: {
+    modifiers: PUT_MODIFIERS,
+    sizes: SIZE_FORMS,
+    aspects: ASPECT_FORMS,
+    styleValues: STYLE_VALUE_TYPES,
+    hits: HIT_VALUES,
+  },
   layers: LAYER_NAMES,
   lengths: LENGTH_FORMS,
   percentBasis: PERCENT_BASIS,

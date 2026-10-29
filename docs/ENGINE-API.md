@@ -30,7 +30,7 @@
 > 为什么有这一节：`.ui` 由布局求解给矩形，`iaa-simple` 用 `computeRect` + `minSize/maxSize`，
 > 只有「在 canvas 上自己画」的部分**没有约束** → 游戏代码只能拿 `viewport` 手算，
 > 写出 `vp.width - 24`、`Math.max(90, vp.height * 0.16)`，320×568 下必然重叠或溢出
-> （实测两次：《快递装车员》《拼豆工坊》的盘面/色块池互相压）。
+> （实测两次：两个游戏的盘面/色块池互相压）。
 
 | 导出 | 签名 | 说明 |
 |---|---|---|
@@ -120,9 +120,9 @@ expect(findOverlaps({ play, slotRow, pool, toolBar })).toEqual([]);
 > `DEFAULT_THEME` / `DrawDeps` / `MeasureEnv`，但**没有**转 `stringProp` 等读参数小工具 ——
 > 那几个要直接从 `.../core/ui/components` 导入（见 `templates/iaa-ui/README.md` 的自定义组件示例）。
 
-## core/ui/widgets —— 22 个通用组件
+## core/ui/widgets —— 25 个通用组件
 
-`createWidgetRegistry() => ComponentRegistry`（一次装 22 个）、`WIDGET_COMPONENTS`。
+`createWidgetRegistry() => ComponentRegistry`（一次装 25 个）、`WIDGET_COMPONENTS`。
 
 | 组件 | 文件 | 一行说明 |
 |---|---|---|

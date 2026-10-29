@@ -1,7 +1,7 @@
 # gamekit 接口设计 v0.1
 
 > ⚠ **本文已过期，仅历史参考。** 这是 v1 阶段（2026-10-19）的接口设计稿，状态停在
-> 「待主导者确认」。v2 已改用 [PLAN-v2.md](PLAN-v2.md) 作为方案、[CONVENTIONS.md](CONVENTIONS.md)
+> 「待主导者确认」。v2 已改用 [CONVENTIONS.md](CONVENTIONS.md)
 > 作为工程约定、各包 `**/contract.ts` 作为冻结契约。**不要照本文写新代码**——
 > 包结构、UI 层、构建产物都已变化（例如 UI 层现在是 `.ui` 语言 + region/put 求解器，
 > 不是本文描述的 Widget 锚点布局）。
@@ -20,24 +20,13 @@
 
 - **不做场景编辑器**。不学 Cocos / Laya 的编辑器路线：场景是代码和 JSON，不是 `.scene` 二进制。
 - **不做通用引擎**。不做 ECS 全家桶、不做 3D、不做通用物理。2D + 横板/俯视 + IAA 小游戏。
-- **不做老项目迁移**。wanli 与现有 8 款仓库继续用各自的 `build.js`，kit 不反向依赖、不共享代码。
+- **不做老项目迁移**。老项目继续用各自的 `build.js`，kit 不反向依赖、不共享代码。
 - **不做模块级 HMR**。游戏主循环热替换是伪需求，web 端要的是「保存即刷新」。
 
-## 2. 依据：同一份代码被复制了 9 次
+## 2. 依据：同一份平台代码被复制了多次
 
-| 仓库 | `src/platform.js` | 备注 |
-|---|---|---|
-| caihong-daoshui | 7177 B | 与下面 4 个**字节完全一致** |
-| iaa-game | 7177 B | 一致 |
-| minigame-5 | 7177 B | 一致 |
-| nuoche-chuku | 7177 B | 一致 |
-| xiaoxiao-guoyuan | 7177 B | 一致 |
-| minigame-4 | 6094 B | 早期版本 |
-| minigame-3 | 5964 B | 早期版本 |
-| minigame-2 | 4891 B | 早期版本 |
-| minigame-1 | 3377 B | 早期版本 |
-
-9 款游戏的 `src/` 合计约 73 万字节，全部是同一套「手写文件顺序 + 全局命名空间 + 自研 build.js」结构。
+此前多个项目各自维护一份 `platform.js` 与 `build.js`，内容高度重复（部分文件字节完全一致），
+合计数十万字节，全部是同一套「手写文件顺序 + 全局命名空间 + 自研 build.js」结构。
 
 所以 kit 的最小价值不是「更先进的引擎」，而是两件事：
 
@@ -176,10 +165,10 @@ mg doctor                                  环境与配置体检
 
 | 阶段 | 谁 | 产出 |
 |---|---|---|
-| 接口设计（本文件 + contract.ts） | 维护者 | 冻结契约 |
-| runtime platform 三实现 | AI | web / wechat / douyin |
-| runtime core（loop/stage/input/assets/save/ui/render） | AI | 契约实现 + 测试 |
-| vite 插件 + CLI | AI | 三端产物 + 命令 |
-| 验证 demo + 三端实跑 | 验收 | 三端截图 + 测试报告 |
+| 接口设计（本文件 + contract.ts） | Chief | 冻结契约 |
+| runtime platform 三实现 | dev-bot | web / wechat / douyin |
+| runtime core（loop/stage/input/assets/save/ui/render） | dev2-bot | 契约实现 + 测试 |
+| vite 插件 + CLI | cursor-bot | 三端产物 + 命令 |
+| 验证 demo + 三端实跑 | dev-bot / Chief 验收 | 三端截图 + 测试报告 |
 
-验收标准与卡点由 维护者 定，Bot 之间不互相验收。
+验收标准与卡点由 Chief 定，Bot 之间不互相验收。

@@ -12,7 +12,7 @@
 import type { DefinedComponent } from '../components';
 import { defineComponent, numberProp, stringProp } from '../components';
 
-/** 默认尺寸：用户指定 296×56（比 kuaidi 的胶囊按钮略大，通用件按 44px 触摸下限留余量）。 */
+/** 默认尺寸：用户指定 296×56（比内置业务件的胶囊按钮略大，通用件按 44px 触摸下限留余量）。 */
 const DEFAULT_W = 296;
 const DEFAULT_H = 56;
 

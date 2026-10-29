@@ -1,0 +1,10 @@
+{
+  "design": {
+    "width": 390,
+    "height": 844
+  },
+  "fit": "fill",
+  "assetsDir": "assets",
+  "title": "播放器 UI 还原实验",
+  "subpackages": {}
+}

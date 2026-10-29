@@ -25,9 +25,10 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BENCH_DIR = path.resolve(HERE, '..');
 const CHROME_PATH =
   process.env.CHROME_PATH ?? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const PUPPETEER_PROJECT =
-  process.env.PUPPETEER_PROJECT ??
-  'C:\\Users\\Administrator\\.dsh\\bot\\workspace\\projects\\tanqiu-fengbao\\package.json';
+const PUPPETEER_PROJECT = process.env.PUPPETEER_PROJECT;
+if (PUPPETEER_PROJECT === undefined || PUPPETEER_PROJECT === '') {
+  throw new Error('bench 需要 PUPPETEER_PROJECT 指向含 puppeteer 依赖的 package.json（用于定位浏览器）');
+}
 
 const KIND_LABELS = {
   sprite: '精灵 drawImage 64×64',

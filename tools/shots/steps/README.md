@@ -42,7 +42,7 @@
 { "geom": "arrows" }                       // __mg.geom.arrows 里所有矩形，循环逐个点
 ```
 
-`layout` 里的数组会被摊平成 `key[i]`（例如 kuaidi 的 `cards[0]`）。
+`layout` 里的数组会被摊平成 `key[i]`（例如某款游戏的 `cards[0]`）。
 `geom` 支持两种元素：直接是 `{x,y,w,h}`，或带 `rect: {x,y,w,h}` 的对象。
 
 ### 断言
@@ -74,10 +74,7 @@
 
 | 游戏 | 屏幕字段 | 开始按钮 | 推进断言 |
 |---|---|---|---|
-| `arrow-pop` | `state.screen` | `primaryButton` | 点箭头后 `state.moves > 0`，再等 `result` |
-| `chashan-xiaoyuan` | `state.screen` | `primaryButton` | 点茶客座后 `state.dayIncome > 0` |
-| `kuaidi-load` | `state.phase` | `primary` | 选卡 + 点车厢格后 `state.placed.length > 0` |
 | `pindou-workshop` | `state.screen` | `primaryButton` | 拖色块进临时位后 `loc.t == temp` 计数 ≥ 1 |
 
-结算屏不是每款都能在十几秒内到达：`arrow-pop` 第 1 关一支箭，点掉即结算；
+结算屏不是每款都能在十几秒内到达：有的游戏一关一支箭，点掉即结算；
 其余三款的结算步写成 `required: false`，没到记 SKIP，不影响退出码。

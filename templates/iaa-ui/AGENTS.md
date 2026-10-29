@@ -1,7 +1,7 @@
 # AGENTS.md —— 给 AI 的工程说明书（iaa-ui 模板）
 
 > 你正在一个**游戏工程**里，不是引擎仓库。这个工程的界面用 `.ui` 声明式描述，
-> 布局由引擎求解，组件来自注册表（**31 个 = 9 个内置业务件 + 22 个通用组件**）。
+> 布局由引擎求解，组件来自注册表（**34 个 = 9 个内置业务件 + 25 个通用组件**）。
 > 本文件是「这个工程怎么用」的说明书；语法与 API 在仓库文档里，别靠记忆写。
 
 ## 先读什么
@@ -11,7 +11,7 @@
 | 文档 | 什么时候读 |
 |---|---|
 | [`../../docs/START-HERE.md`](../../docs/START-HERE.md) | **第一次进来先读**：从零做一款游戏的完整流程（建项目 → 写 `.ui` → 接布局/渲染 → 三端构建 → 验收） |
-| [`../../docs/ui-syntax.md`](../../docs/ui-syntax.md) | 写/改 `.ui` 前必读：`region` / `put` / `layer` 语法、尺寸与对齐、命中语义、22 个通用组件的 props |
+| [`../../docs/ui-syntax.md`](../../docs/ui-syntax.md) | 写/改 `.ui` 前必读：`region` / `put` / `layer` 语法、尺寸与对齐、命中语义、25 个通用组件的 props |
 | [`../../docs/ENGINE-API.md`](../../docs/ENGINE-API.md) | 查 API 签名时读：布局与交互纯函数、`DrawDeps`/`MeasureEnv`、平台适配、物理（可选包） |
 | [`../../docs/GAME-WORKFLOW.md`](../../docs/GAME-WORKFLOW.md) | **做完整游戏的流程**：先写 PRD.md、美术并行与缺图回落、手感清单、截图自评、包体与部署 |
 | [`docs/SKINS.md`](docs/SKINS.md) | 开箱皮肤：暖木纹 / 清爽玻璃，切换与缺图回落 |

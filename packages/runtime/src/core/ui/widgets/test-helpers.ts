@@ -1,3 +1,4 @@
+// @long-file 假画布必须把 fillRect / 路径 fill / 文本 / 图片 / clip 五类调用记在同一个对象上，拆开会让一次绘制的证据散落、断言读不全
 /**
  * widgets 测试用的假画布与假依赖。
  *
@@ -26,6 +27,13 @@ export interface SpyText {
   readonly x: number;
   readonly y: number;
   readonly color: string;
+  /**
+   * `fillText` 的第 4 参（只有真的传了才记录）。
+   *
+   * 用来断言「`TextStyle.maxWidth` 透传到 canvas」——折行按估算算行数，
+   * 真实字宽偏差靠这个参数横向压缩兜住，不记录它就测不到兜底是否生效。
+   */
+  readonly maxWidth?: number;
 }
 
 export interface SpyCtx {
@@ -66,6 +74,28 @@ export interface SpyCtx {
    * moveTo/lineTo/arcTo 正好覆盖四个角点，包围盒就等于该块的 `{x,y,w,h}`。
    */
   readonly fillBounds: { readonly x: number; readonly y: number; readonly w: number; readonly h: number }[];
+  /**
+   * 每次填充的矩形 + 颜色（`fillRect` 与路径 `fill` 合并，按发生顺序）。
+   *
+   * 为什么要另开一份、而不给 `fillBounds` 加 `color` 字段：`fillBounds` 已被
+   * `widgets-scrollbar.test.ts` 用 `toEqual({x,y,w,h})` 严格比较，加字段会整批打红。
+   *
+   * 为什么需要它：圆角块（气泡底、圆角输入框、圆角按钮）全都走
+   * `beginPath → … → fill()`，**`spy.fills` 里一个都没有**。想把「填充面积 / 唯一填充色」
+   * 这类像素断言接到 `fills` 上会恒得 0 —— 不是没画，是读错了通道。
+   * 头像圆这类没有路径顶点的 `arc + fill` 反推不出矩形，不计入（面积只会偏小，不影响 `≥` 口径）。
+   */
+  readonly fillBoxes: SpyFillBox[];
+}
+
+/** 一次填充：矩形 + 颜色 + 走的是哪条通道。 */
+export interface SpyFillBox {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+  readonly color: string;
+  readonly via: 'rect' | 'path';
 }
 
 /** 假画布：把绘制调用记进数组，属性用 getter/setter 模拟。 */
@@ -93,15 +123,18 @@ export const spyCtx = (): SpyCtx => {
     strokeColors: [],
     pathStarts: [],
     fillBounds: [],
+    fillBoxes: [],
   };
   /** 刚开了一条新路径、还没记起点 */
   let awaitingStart = false;
   /** 当前路径的顶点（用来反推 fill 的包围盒） */
   let pathPoints: number[][] = [];
 
-  /** 用当前路径顶点算包围盒，push 进 fillBounds 并清空。 */
-  const pushBounds = (target: SpyCtx): void => {
-    if (pathPoints.length === 0) return;
+  /** 用当前路径顶点算包围盒，push 进 fillBounds 并清空；返回该包围盒（无顶点时为 null）。 */
+  const pushBounds = (
+    target: SpyCtx,
+  ): { readonly x: number; readonly y: number; readonly w: number; readonly h: number } | null => {
+    if (pathPoints.length === 0) return null;
     let minX = Number.POSITIVE_INFINITY;
     let minY = Number.POSITIVE_INFINITY;
     let maxX = Number.NEGATIVE_INFINITY;
@@ -114,8 +147,10 @@ export const spyCtx = (): SpyCtx => {
       if (x > maxX) maxX = x;
       if (y > maxY) maxY = y;
     }
-    target.fillBounds.push({ x: minX, y: minY, w: maxX - minX, h: maxY - minY });
+    const bounds = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+    target.fillBounds.push(bounds);
     pathPoints = [];
+    return bounds;
   };
   const ctx = {
     get fillStyle(): string {
@@ -185,7 +220,8 @@ export const spyCtx = (): SpyCtx => {
     fill: (): void => {
       spy.pathFills += 1;
       spy.pathFillColors.push(state.fillStyle);
-      pushBounds(spy);
+      const bounds = pushBounds(spy);
+      if (bounds !== null) spy.fillBoxes.push({ ...bounds, color: state.fillStyle, via: 'path' });
     },
     stroke: (): void => {
       spy.strokes += 1;
@@ -193,9 +229,16 @@ export const spyCtx = (): SpyCtx => {
     },
     fillRect: (x: number, y: number, w: number, h: number): void => {
       spy.fills.push({ args: [x, y, w, h], color: state.fillStyle });
+      spy.fillBoxes.push({ x, y, w, h, color: state.fillStyle, via: 'rect' });
     },
-    fillText: (text: string, x: number, y: number): void => {
-      spy.texts.push({ text, x, y, color: state.fillStyle });
+    fillText: (text: string, x: number, y: number, maxWidth?: number): void => {
+      spy.texts.push({
+        text,
+        x,
+        y,
+        color: state.fillStyle,
+        ...(maxWidth === undefined ? {} : { maxWidth }),
+      });
     },
     drawImage: (native: unknown, ...args: number[]): void => {
       spy.images.push({ native, args });
@@ -206,6 +249,22 @@ export const spyCtx = (): SpyCtx => {
   spy.ctx = ctx as unknown as Ctx2D;
   return spy;
 };
+
+/**
+ * 这次绘制用到的全部填充色（去重，路径 `fill` 与 `fillRect` 合并）。
+ *
+ * 像素断言的「唯一填充色」口径：圆角块走路径、直角块走 `fillRect`，
+ * 只看 `fills` 会漏掉全部圆角块。
+ */
+export const fillColors = (spy: SpyCtx): readonly string[] => [...new Set(spy.fillBoxes.map((box) => box.color))];
+
+/** 填充总面积（`fillBoxes` 各矩形面积之和）。 */
+export const filledArea = (spy: SpyCtx): number =>
+  spy.fillBoxes.reduce((sum, box) => sum + box.w * box.h, 0);
+
+/** 填充面积占 box 的比例（像素断言的「画面被填满多少」口径）。 */
+export const filledRatio = (spy: SpyCtx, box: Rect): number =>
+  box.w > 0 && box.h > 0 ? filledArea(spy) / (box.w * box.h) : 0;
 
 /** 构造一个图片素材（native 带 key，便于断言「用的是哪张图」）。 */
 export const makeImage = (key: string, w: number, h: number, sx = 0, sy = 0): ImageAsset => ({

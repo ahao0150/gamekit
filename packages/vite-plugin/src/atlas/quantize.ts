@@ -52,7 +52,7 @@ export interface Quantized {
   readonly quality: QualityReport;
 }
 
-/** 三条**同时**成立才算合格（2026-10-20 定稿的新门限）。 */
+/** 三条**同时**成立才算合格（2026-10-20 Chief 拍板的新门限）。 */
 export const isQualityOk = (quality: QualityReport): boolean =>
   quality.psnr >= MIN_PSNR
   && quality.diffRatio <= MAX_DIFF_RATIO

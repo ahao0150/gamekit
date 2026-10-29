@@ -2,7 +2,7 @@
 
 > **本仓库已于 2026-10-20 重启为 v2 开发中。**
 > 下面的文字是 v1 归档时的原文，保留为**历史记录**，**不再是当前开发约束**。
-> 当前规则见 [AGENTS.md](AGENTS.md)，方案见 [docs/PLAN-v2.md](docs/PLAN-v2.md)。
+> 当前规则见 [AGENTS.md](AGENTS.md)。
 
 ---
 
@@ -50,7 +50,7 @@
 - `minify` 默认 `'oxc'`；
 - iife 单文件输出 + 虚拟模块 + `emitFile` 写 `index.html` 均实测可用。
 
-**老框架（wanli 系 `build.js` 287 行）的资源管线结论**
+**老框架（`build.js` 287 行）的资源管线结论**
 
 - 资源绝不能交给 Vite 的 asset 管线：小游戏没有 `fetch` / `new URL`；
 - 同名 `png`/`webp` 只打较小的那份，且要检测「png 比 webp 还小」的过期版本隐患；

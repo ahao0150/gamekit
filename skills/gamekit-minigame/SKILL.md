@@ -36,7 +36,7 @@ pnpm mg -- create my-game                        # 默认 iaa-ui 模板
 pnpm mg -- create my-game --template iaa-simple  # 极简单屏 demo（手写布局老链）
 ```
 
-- **iaa-ui**（默认）：`.ui` 链已接好 —— `vite.config.ts` / `src/app/ui-registry.ts` / `ui/*.ui` / `env.d.ts` 全都在，**31 个组件**（9 个内置业务件 + 22 个通用件）开箱可写。
+- **iaa-ui**（默认）：`.ui` 链已接好 —— `vite.config.ts` / `src/app/ui-registry.ts` / `ui/*.ui` / `env.d.ts` 全都在，**34 个组件**（9 个内置业务件 + 25 个通用件）开箱可写。
 - **iaa-simple**：没有 `vite.config.ts` / `ui-registry.ts` / `ui/`，要 `.ui` 就得自己补一遍（照着 START-HERE §3–§6）。
 
 游戏必须建在 `games/<name>/`：`mg create` 会**拒绝仓库外路径**，三端构建与 workspace 协议都依赖这个前提。

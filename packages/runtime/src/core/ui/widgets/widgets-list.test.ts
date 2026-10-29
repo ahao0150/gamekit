@@ -1,3 +1,4 @@
+// @long-file 定高 vs 实渲染 vs 变高三条路径的绘制断言放一处，才看得出「哪条路径漏画」的对照关系
 /**
  * `list` 组件测试（T16）：两种模式**真实绘制次数**对比 + 空列表 + 分割线 + list.ui 校验。
  *
@@ -234,5 +235,72 @@ describe('list.ui 校验（离线 ui.check 不接注册表，靠这条守住）'
       expect(rect.h).toBeGreaterThan(0);
       expect(rect.y + rect.h).toBeLessThanOrEqual(viewport.height + 0.01);
     }
+  });
+});
+
+/**
+ * 变高通道（`data.itemHeights`）：聊天消息这类「按文本变高」的列表走这条。
+ *
+ * 断言口径与定高部分一致：数**真实绘制**（renderItem 的下标与矩形），
+ * 最后一条再做像素等价的覆盖统计 —— 光断言「算出来的窗口对」会漏掉「一格没画」的老坑。
+ */
+describe('变高通道 data.itemHeights', () => {
+  /** 视口 448 下：120 + 80 + 200 = 400，第 3 项（60）部分可见，第 4 项起在视口外 */
+  const heights = [120, 80, 200, 60, 40, 100, 90, 70];
+  const data = (extra: Record<string, unknown>): DrawDeps => withData({ items: items(8), ...extra });
+
+  it('按各自高度定位（不是 itemH=56），且只画视口内的项', () => {
+    const spy = spyCtx();
+    const rec = recorder();
+    list.def.draw(spy.ctx, box, { itemH: 56 }, data({ itemHeights: heights, renderItem: rec.renderItem }));
+    expect(rec.seen).toEqual([0, 1, 2, 3]);
+    expect(rec.rects.map((r) => r.h)).toEqual([120, 80, 200, 60]);
+    expect(rec.rects.map((r) => r.y)).toEqual([100, 220, 300, 500]);
+  });
+
+  it('长度不匹配：抛中文错误并报出两个长度（不静默按短的画）', () => {
+    const spy = spyCtx();
+    expect(() => list.def.draw(spy.ctx, box, { itemH: 56 }, data({ itemHeights: [10, 20] })))
+      .toThrow(/itemHeights 长度 2 与 items 长度 8 不一致/);
+  });
+
+  it('没有 itemHeights 时仍走定高（旧界面零改动）', () => {
+    const spy = spyCtx();
+    const rec = recorder();
+    list.def.draw(spy.ctx, box, { itemH: 56 }, data({ renderItem: rec.renderItem }));
+    expect(rec.seen).toHaveLength(8);
+    expect(new Set(rec.rects.map((r) => r.h))).toEqual(new Set([56]));
+  });
+
+  it('滚动后画的是滚动后的那几项（前缀和生效）', () => {
+    const spy = spyCtx();
+    const rec = recorder();
+    // totalH = 760，视口 448 → 最大滚 312；滚 300 后从项 2（offsets 200）之后开始
+    list.def.draw(spy.ctx, box, { itemH: 56, scrollTop: 300 }, data({ itemHeights: heights, renderItem: rec.renderItem }));
+    expect(rec.seen[0]).toBe(2);
+    expect(rec.rects[0]?.y).toBe(box.y - 100); // 300 − (offsets[2]=200) … 顶边在视口上方 100
+  });
+
+  it('像素等价断言：气泡真的画出来了（唯一色 ≥ 4、覆盖面积 > 视口 50%）', () => {
+    const spy = spyCtx();
+    const bubbleColors = ['#112233', '#445566', '#778899', '#aabbcc'];
+    list.def.draw(
+      spy.ctx,
+      box,
+      { itemH: 0, itemColor: '#0f0f0f', divider: true, dividerColor: '#eeeeee' },
+      data({
+        itemHeights: heights,
+        renderItem: (ctx: Ctx2D, _item: unknown, rect: Rect, index: number): void => {
+          ctx.fillStyle = bubbleColors[index % bubbleColors.length] as string;
+          ctx.fillRect(rect.x + 4, rect.y + 4, rect.w - 8, rect.h - 8);
+        },
+      }),
+    );
+    // 1) 唯一填充色 ≥ 4（背景 / 分割线 / 气泡多种颜色，不是一片空白）
+    const colors = new Set(spy.fills.map((f) => f.color));
+    expect(colors.size).toBeGreaterThanOrEqual(4);
+    // 2) 被填充的总面积 > 视口 50%（气泡真的铺开了，不是只画了个边框）
+    const covered = spy.fills.reduce((sum, f) => sum + (f.args[2] ?? 0) * (f.args[3] ?? 0), 0);
+    expect(covered / (box.w * box.h)).toBeGreaterThan(0.5);
   });
 });

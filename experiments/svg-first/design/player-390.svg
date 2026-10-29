@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  音乐播放器 · SVG 先行设计稿（基准视口 390×844）
+  约束原生：没有散落的绝对坐标设计，每个元素都在某个 region 的流里，
+  位置/尺寸由 data-* 属性表达，实际几何由 tools/bake.mjs 复算并逐项对拍。
+  视觉：深色底（ink）+ 玻璃拟态 + 两处径向光晕 + 背景/中景/前景三层。
+  纪律：每个 data-part 的几何都严格落在自己的框内（装饰也不许出界），
+       否则对拍会把它当成“文字溢出”抓出来。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844"
+     data-design="music-player" data-baseline="390x844">
+  <style>
+    text { font-family: "Microsoft YaHei", "Noto Sans SC", "PingFang SC", sans-serif; }
+    .seal { font-family: "KaiTi", "STKaiti", "SimSun", serif; }
+  </style>
+
+  <defs>
+    <!-- 背景：墨色纵向渐变（三档明暗派生） -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16261f"/>
+      <stop offset="0.52" stop-color="#233e36"/>
+      <stop offset="1" stop-color="#1b2f28"/>
+    </linearGradient>
+    <!-- 光晕一：青绿（封面后方） -->
+    <radialGradient id="jadeGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#315e4d" stop-opacity="0.70"/>
+      <stop offset="0.55" stop-color="#315e4d" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#315e4d" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 光晕二：金色（右下，压住画面重量） -->
+    <radialGradient id="goldGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#b4935d" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#b4935d" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 封面主渐变：青绿 → 墨（斜向） -->
+    <linearGradient id="coverGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#63a48c"/>
+      <stop offset="0.46" stop-color="#356a57"/>
+      <stop offset="1" stop-color="#1b2f28"/>
+    </linearGradient>
+    <radialGradient id="coverGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#b4935d" stop-opacity="0.62"/>
+      <stop offset="1" stop-color="#b4935d" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 封面高光（斜向反光，代替模糊） -->
+    <linearGradient id="gloss" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#fffaf0" stop-opacity="0.20"/>
+      <stop offset="0.62" stop-color="#fffaf0" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#fffaf0" stop-opacity="0"/>
+    </linearGradient>
+    <!-- 进度填充：青绿 → 金（头部提亮） -->
+    <linearGradient id="progGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#315e4d"/>
+      <stop offset="0.72" stop-color="#4a8570"/>
+      <stop offset="1" stop-color="#b4935d"/>
+    </linearGradient>
+    <!-- 播放键：中心提亮（画面最亮的一处） -->
+    <radialGradient id="playGrad" cx="0.42" cy="0.34" r="0.72">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="0.42" stop-color="#d6c9ae"/>
+      <stop offset="1" stop-color="#b4935d"/>
+    </radialGradient>
+    <!-- 玻璃：半透明面（无阴影模糊） -->
+    <linearGradient id="glassFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffaf0" stop-opacity="0.13"/>
+      <stop offset="1" stop-color="#fffaf0" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="glassSoft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffaf0" stop-opacity="0.13"/>
+      <stop offset="1" stop-color="#fffaf0" stop-opacity="0.06"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ══════════════════ 背景层（纯装饰，无 data-name） ══════════════════ -->
+  <g data-layer="bg">
+    <rect data-token="--color-bg-deep" x="0" y="0" width="390" height="844" fill="url(#bgGrad)"/>
+    <!-- 光晕一：封面后方（青绿） -->
+    <ellipse data-token="--color-gl-jade" cx="195" cy="278" rx="270" ry="270" fill="url(#jadeGlow)"/>
+    <!-- 光晕二：右下（金色） -->
+    <ellipse data-token="--color-gl-gold" cx="330" cy="720" rx="230" ry="230" fill="url(#goldGlow)"/>
+    <!-- 顶部压暗，让 header 浮起来 -->
+    <rect data-token="--color-bg-deep" x="0" y="0" width="390" height="150" fill="#16261f" opacity="0.55"/>
+  </g>
+
+  <!-- ══════════════════ 中景层（玻璃面板） ══════════════════ -->
+  <g data-layer="mid">
+    <rect data-token="--color-glass" x="16" y="653.44" width="358" height="174.56" rx="28"
+          fill="url(#glassFill)" stroke="rgba(255,250,240,0.18)" stroke-width="1"/>
+    <path data-token="--color-glass-line" d="M44 654.44 H346" stroke="rgba(255,250,240,0.18)" stroke-width="1"
+          stroke-linecap="round"/>
+  </g>
+
+  <!-- ══════════════════ 前景层（约束树） ══════════════════ -->
+  <g data-layer="front">
+
+    <!-- ─────────── region header：顶部 10% ─────────── -->
+    <g data-region="header" data-anchor="top" data-height="10%"
+       data-dir="row" data-gap="12" data-pad-x="24"
+       data-align="center" data-justify="space-between">
+
+      <g data-part="backBtn" data-name="backBtn" data-comp="custom:iconButton"
+         data-size="fixed:44" data-cross="fixed:44" transform="translate(24,20.2)">
+        <rect x="0" y="0" width="44" height="44" fill="none"/>
+        <circle data-token="--color-glass" cx="22" cy="22" r="21.5" fill="url(#glassSoft)" stroke="rgba(255,250,240,0.10)"/>
+        <path data-token="--color-text" d="M26 15 L17 22 L26 29" fill="none" stroke="#fffaf0" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+
+      <g data-part="headerTitle" data-name="headerTitle" data-comp="label"
+         data-size="fill" data-cross="fixed:20" transform="translate(80,32.2)">
+        <rect x="0" y="0" width="230" height="20" fill="none"/>
+        <text data-token="--color-text-2" x="115" y="10.5" text-anchor="middle" dominant-baseline="central"
+              font-size="12" fill="#d6c9ae" letter-spacing="1.2">正在播放 · NOW PLAYING</text>
+      </g>
+
+      <g data-part="moreBtn" data-name="moreBtn" data-comp="custom:iconButton"
+         data-size="fixed:44" data-cross="fixed:44" transform="translate(322,20.2)">
+        <rect x="0" y="0" width="44" height="44" fill="none"/>
+        <circle data-token="--color-glass" cx="22" cy="22" r="21.5" fill="url(#glassSoft)" stroke="rgba(255,250,240,0.10)"/>
+        <g data-token="--color-text-2" fill="#d6c9ae">
+          <circle cx="22" cy="15" r="2"/>
+          <circle cx="22" cy="22" r="2"/>
+          <circle cx="22" cy="29" r="2"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- ─────────── region stage：吃掉剩余 ─────────── -->
+    <g data-region="stage" data-anchor="fill"
+       data-dir="column" data-gap="24" data-pad-x="36" data-pad-y="24"
+       data-align="center" data-justify="center">
+
+      <!-- 封面：主体。内部装饰不参与对拍（纯装饰，无 data-name） -->
+      <g data-part="albumCover" data-name="albumCover" data-comp="custom:albumCover"
+         data-size="fixed:318" data-cross="fixed:318" transform="translate(36,115.92)">
+        <rect x="0" y="0" width="318" height="318" fill="none"/>
+        <rect data-token="--color-cover" x="0" y="0" width="318" height="318" rx="28" fill="url(#coverGrad)"/>
+        <!-- 封面内的金色光斑（第二处渐变光晕，严格留在框内） -->
+        <circle data-token="--color-gl-gold" cx="234" cy="80" r="76" fill="url(#coverGlow)"/>
+        <!-- 抽象声波：三条同心弧，替代写实封面 -->
+        <g data-token="--color-gold" fill="none" stroke="#b4935d" stroke-linecap="round" opacity="0.75">
+          <path d="M64 232 q30 -46 60 0 t60 0" stroke-width="2.5"/>
+          <path d="M64 252 q30 -46 60 0 t60 0" stroke-width="2.5" opacity="0.9"/>
+          <path d="M64 272 q30 -46 60 0 t60 0" stroke-width="2.5" opacity="0.45"/>
+        </g>
+        <!-- 斜向高光 -->
+        <rect data-token="--color-gloss" x="0" y="0" width="318" height="168" rx="28" fill="url(#gloss)"/>
+        <!-- 内描边：让封面从深底上“立”起来 -->
+        <rect data-token="--color-glass-line" x="0.5" y="0.5" width="317" height="317" rx="27.5"
+              fill="none" stroke="rgba(255,250,240,0.18)" stroke-width="1"/>
+        <!-- 方章：中文单字做图标（零素材识别度） -->
+        <g data-token="--color-seal" transform="translate(20,254)">
+          <rect data-token="--color-seal" x="0" y="0" width="44" height="44" rx="5" fill="#a64e36"/>
+          <rect data-token="--color-seal" x="1" y="1" width="42" height="42" rx="4" fill="none" stroke="rgba(255,250,240,0.28)"/>
+          <text data-token="--color-text" class="seal" x="22" y="23" text-anchor="middle" dominant-baseline="central"
+                font-size="20" fill="#fffaf0">乐</text>
+        </g>
+      </g>
+
+      <!-- 曲名 -->
+      <g data-part="songTitle" data-name="songTitle" data-comp="label"
+         data-size="fixed:40" data-cross="fill" transform="translate(36,457.92)">
+        <rect x="0" y="0" width="318" height="40" fill="none"/>
+        <text data-token="--color-text" x="0" y="20" dominant-baseline="central"
+              font-size="28" fill="#fffaf0" letter-spacing="0.5">晚风告白</text>
+      </g>
+
+      <!-- 歌手 -->
+      <g data-part="artistName" data-name="artistName" data-comp="label"
+         data-size="fixed:20" data-cross="fill" transform="translate(36,521.92)">
+        <rect x="0" y="0" width="318" height="20" fill="none"/>
+        <text data-token="--color-text-2" x="1" y="10" dominant-baseline="central"
+              font-size="14" fill="#d6c9ae">林晚 · 专辑《归途》</text>
+      </g>
+
+      <!-- 进度条：轨道 + 已播 + 手柄 + 两端时间 -->
+      <g data-part="progressBar" data-name="progressBar" data-comp="custom:progressBar"
+         data-size="fixed:44" data-cross="fill"
+         data-dir="column" data-gap="8" data-align="stretch" data-justify="start"
+         transform="translate(36,565.92)">
+
+        <g data-part="progressTrack" data-name="progressTrack" data-comp="custom:progressTrack"
+           data-size="fixed:18" data-cross="fill" transform="translate(0,0)">
+          <rect x="0" y="0" width="318" height="18" fill="none"/>
+          <rect data-token="--color-track" x="0" y="0" width="318" height="18" rx="9" fill="rgba(255,250,240,0.14)"/>
+          <rect data-token="--color-accent" x="0" y="0" width="111.3" height="18" rx="9" fill="url(#progGrad)"/>
+          <circle data-token="--color-gold" cx="111.3" cy="9" r="8" fill="none" stroke="#b4935d" stroke-width="2" opacity="0.55"/>
+          <circle data-token="--color-text" cx="111.3" cy="9" r="6" fill="#fffaf0"/>
+        </g>
+
+        <g data-part="timeRow" data-name="timeRow" data-comp="custom:timeRow"
+           data-size="fixed:18" data-cross="fill"
+           data-dir="row" data-gap="0" data-align="center" data-justify="space-between"
+           transform="translate(0,26)">
+          <rect x="0" y="0" width="318" height="18" fill="none"/>
+
+          <g data-part="timeCurrent" data-name="timeCurrent" data-comp="label"
+             data-size="fixed:60" data-cross="fixed:18" transform="translate(0,0)">
+            <rect x="0" y="0" width="60" height="18" fill="none"/>
+            <text data-token="--color-text-2" x="0" y="9" dominant-baseline="central" font-size="12"
+                  fill="#d6c9ae">01:23</text>
+          </g>
+
+          <g data-part="timeTotal" data-name="timeTotal" data-comp="label"
+             data-size="fixed:60" data-cross="fixed:18" transform="translate(258,0)">
+            <rect x="0" y="0" width="60" height="18" fill="none"/>
+            <text data-token="--color-text-3" x="60" y="9" text-anchor="end" dominant-baseline="central"
+                  font-size="12" fill="#7c8071">03:58</text>
+          </g>
+        </g>
+      </g>
+    </g>
+
+    <!-- ─────────── region dock：底部 24% ─────────── -->
+    <g data-region="dock" data-anchor="bottom" data-height="24%"
+       data-dir="column" data-gap="0" data-pad-x="28" data-pad-y="18"
+       data-align="center" data-justify="space-between">
+
+      <!-- 主控三键：播放键最大最亮 -->
+      <g data-part="primaryControls" data-name="primaryControls" data-comp="custom:controlsRow"
+         data-size="fixed:84" data-cross="fill"
+         data-dir="row" data-gap="32" data-align="center" data-justify="center"
+         transform="translate(28,659.44)">
+        <rect x="0" y="0" width="334" height="84" fill="none"/>
+
+        <g data-part="prevBtn" data-name="prevBtn" data-comp="custom:iconButton"
+           data-size="fixed:52" data-cross="fixed:52" transform="translate(41,16)">
+          <rect x="0" y="0" width="52" height="52" fill="none"/>
+          <circle data-token="--color-glass" cx="26" cy="26" r="25.5" fill="url(#glassSoft)" stroke="rgba(255,250,240,0.10)"/>
+          <g data-token="--color-text-2" fill="#d6c9ae">
+            <rect x="16" y="16" width="2.5" height="20" rx="1.2"/>
+            <path d="M37 15 L21 26 L37 37 Z"/>
+          </g>
+        </g>
+
+        <g data-part="playBtn" data-name="playBtn" data-comp="custom:playButton"
+           data-size="fixed:84" data-cross="fixed:84" transform="translate(125,0)">
+          <rect x="0" y="0" width="84" height="84" fill="none"/>
+          <!-- 外环：金色细环，制造“最亮”的层级（不用阴影） -->
+          <circle data-token="--color-gold" cx="42" cy="42" r="41" fill="none" stroke="#b4935d" stroke-width="1"
+                  opacity="0.45"/>
+          <circle data-token="--color-play" cx="42" cy="42" r="38" fill="url(#playGrad)"/>
+          <circle data-token="--color-gloss" cx="42" cy="42" r="37" fill="none" stroke="#fffaf0" stroke-width="1.5"
+                  opacity="0.5"/>
+          <path data-token="--color-bg-deep" d="M34 27 L56 42 L34 57 Z" fill="#16261f"/>
+        </g>
+
+        <g data-part="nextBtn" data-name="nextBtn" data-comp="custom:iconButton"
+           data-size="fixed:52" data-cross="fixed:52" transform="translate(241,16)">
+          <rect x="0" y="0" width="52" height="52" fill="none"/>
+          <circle data-token="--color-glass" cx="26" cy="26" r="25.5" fill="url(#glassSoft)" stroke="rgba(255,250,240,0.10)"/>
+          <g data-token="--color-text-2" fill="#d6c9ae">
+            <path d="M15 15 L31 26 L15 37 Z"/>
+            <rect x="33.5" y="16" width="2.5" height="20" rx="1.2"/>
+          </g>
+        </g>
+      </g>
+
+      <!-- 次级三键：循环 / 喜欢 / 播放列表 -->
+      <g data-part="secondaryRow" data-name="secondaryRow" data-comp="custom:controlsRow"
+         data-size="fixed:44" data-cross="fill"
+         data-dir="row" data-gap="0" data-align="center" data-justify="space-between"
+         transform="translate(28,782)">
+        <rect x="0" y="0" width="334" height="44" fill="none"/>
+
+        <g data-part="repeatBtn" data-name="repeatBtn" data-comp="custom:iconButton"
+           data-size="fixed:44" data-cross="fixed:44" transform="translate(0,0)">
+          <rect x="0" y="0" width="44" height="44" fill="none"/>
+          <g data-token="--color-text-2" stroke="#d6c9ae" stroke-width="2" fill="none"
+             stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 19 h11 a6 6 0 0 1 6 6 v3"/>
+            <path d="M29 25 h-11 a6 6 0 0 1 -6 -6 v-3"/>
+          </g>
+          <g data-token="--color-accent-hi" fill="#b4935d">
+            <path d="M32 30 L35 25 L29 25 Z"/>
+            <path d="M12 14 L9 19 L15 19 Z"/>
+          </g>
+        </g>
+
+        <g data-part="likeBtn" data-name="likeBtn" data-comp="custom:iconButton"
+           data-size="fixed:44" data-cross="fixed:44" transform="translate(145,0)">
+          <rect x="0" y="0" width="44" height="44" fill="none"/>
+          <path data-token="--color-danger" fill="#c9704f"
+                d="M22 33 C22 33 11 26.5 11 19.5 C11 15.9 13.8 13.5 16.8 13.5 C19 13.5 21 14.8 22 16.6
+                   C23 14.8 25 13.5 27.2 13.5 C30.2 13.5 33 15.9 33 19.5 C33 26.5 22 33 22 33 Z"/>
+        </g>
+
+        <g data-part="listBtn" data-name="listBtn" data-comp="custom:iconButton"
+           data-size="fixed:44" data-cross="fixed:44" transform="translate(290,0)">
+          <rect x="0" y="0" width="44" height="44" fill="none"/>
+          <g data-token="--color-text-2" stroke="#d6c9ae" stroke-width="2" stroke-linecap="round">
+            <path d="M15 16 H29"/>
+            <path d="M15 22 H29"/>
+            <path d="M15 28 H25"/>
+          </g>
+          <g data-token="--color-gold" fill="#b4935d">
+            <circle cx="33" cy="16" r="1.6"/>
+            <circle cx="33" cy="22" r="1.6"/>
+          </g>
+        </g>
+      </g>
+    </g>
+
+  </g>
+</svg>

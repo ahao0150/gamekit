@@ -142,7 +142,7 @@ registry.register(
 - 界面层：`ui.check` 两视口（离线，不需要注册表；`size auto` 会报 0×0 是预期）
 - 运行时：`games/ui-demo/tools/verify-{ui,runtime,input}.mjs` 是「真实鼠标/键盘驱动」的写法参照。
   ⚠ `verify-input.mjs` 用 puppeteer，而仓库里**没装** puppeteer —— 它靠 `createRequire` 从本机另一个
-  项目借（文件里硬编码了 `projects/tanqiu-fengbao` 的路径）。新游戏照抄时要换成自己的 CDP 客户端
+  项目借（文件里硬编码了一个本地项目的路径）。新游戏照抄时要换成自己的 CDP 客户端
   （`templates/iaa-simple/tools/lib/harness.mjs` 是零依赖的那套），否则换台机器就跑不了。
 - **截图必须肉眼确认画面内容**：状态全绿但画面空已经复现过三次。打开截图确认按钮/格子/文字真的在画面上。
 - 平台门禁：`node templates/iaa-simple/tools/verify-platform.mjs`（测的是 iaa-simple 老链，

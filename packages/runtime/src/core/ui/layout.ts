@@ -16,6 +16,9 @@
  * - `auto`：尺寸由子元素的 `measure()` 决定，没注册 measure 时按 0（不报错，
  *   留给后面的组件注册表补）。
  * - `fixed(n)` / `ratio(r)`：主轴定长 / 占可用空间的比例。
+ * - `aspect`（v0.7）：按宽高比从一个**已知轴**推另一轴。交叉轴确定（`cross` 或
+ *   `align stretch`）推主轴、主轴确定（`size` 是 fixed/ratio）推交叉轴；两轴都定或
+ *   都不定都报错。求解在 `layout-aspect.ts`，**必须在第一遍推进 cursor 之前**算完。
  * - overlay + `at`（v0.6）：region 用**中心点** `(x, y)` + `size` 任意定位，
  *   不参与流；边与高度对 overlay 无意义，可以省略。
  *
@@ -43,6 +46,7 @@ import { collectPaint } from './layout-paint';
 import { deflate, num, resolveLength, round2, toInsets } from './layout-geometry';
 import type { Ctx } from './layout-geometry';
 import { resolveAtRect } from './layout-at';
+import { crossFromMain, planAspectStack } from './layout-aspect';
 
 // 类型与构造器在 layout-spec.ts；这里原样 re-export，外部只认 `./layout` 一个入口。
 export type {
@@ -118,18 +122,24 @@ function layoutStack(container: Rect, stack: StackSpec, ctx: Ctx, path: string):
   if (total === 0) return;
 
   // 第一遍：解析主轴尺寸，fill 的留给第二遍
-  const mains: Array<number | null> = children.map((child) =>
+  const rawMains: Array<number | null> = children.map((child) =>
     resolveSize(child.size, mainLen, child, row, container),
   );
-  const fixedSum = mains.reduce<number>((sum, v) => sum + (v ?? 0), 0);
+  const fixedSum = rawMains.reduce<number>((sum, v) => sum + (v ?? 0), 0);
   const gapSum = Math.max(0, total - 1) * gap;
-  const flexCount = mains.filter((v) => v === null).length;
+  const flexCount = rawMains.filter((v) => v === null).length;
   const remain = mainLen - fixedSum - gapSum;
   const flexSize = flexCount > 0 ? Math.max(0, remain / flexCount) : 0;
 
+  // aspect（v0.7）：必须在 cursor 推进之前算完（主轴要参与 cursor，不能推到第二遍）。
+  // `size fill` + `aspect` 的主轴上限也在这里定下：main = min(flexSize, mainLimit)，
+  // 被钳小的差额留在 remain 里 → 进 free 交给 justify（不重新分给别的 fill 元素）。
+  const plan = planAspectStack({ children, align, row, mainLen, crossLen, rawMains, flexSize, remain });
+  for (const message of plan.errors) ctx.errors.push(`${path}/${message}`);
+
   // justify（v0.4）：fill 先吃掉剩余空间，**剩下的**才交给主轴对齐分配。
   // 有 fill 时 free 通常为 0，所以 justify 不改变 fill 的现有语义；溢出时不分配负空间。
-  const free = Math.max(0, remain - flexSize * flexCount);
+  const free = plan.free;
   let offset = 0;
   let extraGap = 0;
   if (justify === 'center') offset = free / 2;
@@ -146,12 +156,17 @@ function layoutStack(container: Rect, stack: StackSpec, ctx: Ctx, path: string):
   // 第二遍：放置
   let cursor = (row ? container.x : container.y) + offset;
   children.forEach((child, index) => {
-    const main = mains[index] === null ? flexSize : (mains[index] ?? 0);
+    const main = plan.mains[index] ?? 0;
 
     // 交叉轴：子元素自己的 align 优先（`.ui` 的 put 可以单独覆盖），否则跟随 stack
     const childAlign: Align = child.align ?? align;
+    // aspect 决定的交叉轴优先于 align（stretch 也会让位：否则「size + aspect」在默认
+    // stretch 的 stack 里永远算不出交叉轴）
+    const solvedCross = plan.solved[index];
     let cross: number;
-    if (childAlign === 'stretch') cross = crossLen;
+    if (solvedCross?.kind === 'cross') cross = solvedCross.value;
+    else if (solvedCross?.kind === 'fill') cross = crossFromMain(child.aspect ?? 1, row, main);
+    else if (childAlign === 'stretch') cross = crossLen;
     else if (child.cross !== undefined) cross = resolveSize(child.cross, crossLen, child, !row, container) ?? 0;
     else {
       const measured = child.measure?.(container);

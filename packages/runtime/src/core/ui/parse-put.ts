@@ -10,8 +10,9 @@
 
 import type { Align, HitMode, NodeSpec, Size, StyleProps } from './layout';
 import { PUT_MODIFIERS } from './grammar';
-import { IDENT, readAlign, readHit, readSize, readStyle } from './parse-tokens';
+import { IDENT, readAlign, readAspect, readHit, readSize, readStyle } from './parse-tokens';
 import type { Token } from './parse-tokens';
+import { describeAspectConflict } from './layout-aspect';
 
 export interface ParsePutOptions {
   /** 已注册组件名；给了（非空）就校验「未知组件」。 */
@@ -47,7 +48,11 @@ export const parsePutLine = (tokens: readonly Token[], opts: ParsePutOptions): P
   }
 
   let size: Size = { kind: 'auto' };
+  /** 作者是否**显式**写了 `size`：缺省的 auto 与写死的 auto 语义不同（后者和 aspect 冲突）。 */
+  let sizeExplicit = false;
   let cross: Size | undefined;
+  /** 宽高比（v0.7）：`<r>` 或 `<w>:<h>`，已折成 `w / h`。 */
+  let aspect: number | undefined;
   let align: Align | undefined;
   let hit: HitMode | undefined;
   let props: StyleProps | undefined;
@@ -57,8 +62,17 @@ export const parsePutLine = (tokens: readonly Token[], opts: ParsePutOptions): P
     if (word === 'size' || word === 'cross') {
       const read = readSize(tokens, index + 1, word);
       if (!read.ok) return { errors: [...errors, read.message] };
-      if (word === 'size') size = read.size;
-      else cross = read.size;
+      if (word === 'size') {
+        size = read.size;
+        sizeExplicit = true;
+      } else cross = read.size;
+      index = read.next;
+      continue;
+    }
+    if (word === 'aspect') {
+      const read = readAspect(tokens, index + 1, `put '${component}'`);
+      if (!read.ok) return { errors: [...errors, read.message] };
+      aspect = read.aspect;
       index = read.next;
       continue;
     }
@@ -85,15 +99,29 @@ export const parsePutLine = (tokens: readonly Token[], opts: ParsePutOptions): P
       continue;
     }
     const putModifierList = PUT_MODIFIERS.map((m) =>
-      m === 'style' ? 'style k=v…' : m === 'align' ? 'align <a>' : `${m} <尺寸>`,
+      m === 'style'
+        ? 'style k=v…'
+        : m === 'align'
+          ? 'align <a>'
+          : m === 'aspect'
+            ? 'aspect <r|w:h>'
+            : `${m} <尺寸>`,
     ).join(' / ');
     errors.push(`put '${component}' 里不认识的修饰词 '${word}'（可用：${putModifierList}）`);
     return { errors };
   }
 
+  // v0.7：aspect 的组合校验。放在这里而不是 layout 里，是因为只有解析期能区分
+  // 「显式写了 size auto」和「没写 size（解析器补的默认 auto）」——前者与 aspect 冲突。
+  if (aspect !== undefined) {
+    const conflict = describeAspectConflict(size, sizeExplicit, cross);
+    if (conflict !== undefined) return { errors: [...errors, conflict] };
+  }
+
   const node: NodeSpec = {
     name: component,
     size,
+    ...(aspect === undefined ? {} : { aspect }),
     ...(cross === undefined ? {} : { cross }),
     ...(align === undefined ? {} : { align }),
     ...(hit === undefined ? {} : { hit }),

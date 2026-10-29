@@ -10,7 +10,7 @@ import { defineComponent, numberProp, stringProp } from '../components';
 import { drawNineSlice } from '../nine-slice';
 import { fillRect } from '../builtin-draw';
 
-/** 默认九宫格边距（源像素，2x 图上量；与 kuaidi 面板同一口径）。 */
+/** 默认九宫格边距（源像素，2x 图上量；与内置业务面板同一口径）。 */
 const DEFAULT_SLICE = 60;
 
 export const panel: DefinedComponent = defineComponent('panel', {

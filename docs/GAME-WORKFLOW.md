@@ -3,7 +3,7 @@
 > 适用于任何 AI / 团队用 gamekit 从零做一款 H5 / 小游戏。自包含、与工具无关。
 > 语法与 API 细节仍以 [`START-HERE.md`](START-HERE.md)、[`ui-syntax.md`](ui-syntax.md)、
 > [`ENGINE-API.md`](ENGINE-API.md) 为准；本文只管**顺序与验收标准**。
-> 实战样例：`games/yunduan-dieta/`（云端叠塔）。
+> 实战样例：[`games/pindou-workshop/`](../games/pindou-workshop/)（拼豆工坊）。
 
 **一句话流程：策划（推荐）→ PRD → 程序占位可玩版（同时并行出美术）→ 接美术 → 手感 → 验收截图自评 → 包体 → 部署。**
 任何一步没过，不要进入下一步，更不要直接交「灰盒子」原型。
@@ -126,7 +126,7 @@ export default defineConfig({ plugins: [uiPlugin(UI_COMPILE_OPTIONS)] /* … */ 
 若 `.ui` 里还用了按钮别名或纯占位 region（如 `startButton` / `playArea` / `adOverlay`），
 也要一并写进 `knownComponents` 与 `componentProps`（region 的 props 可以是空数组），
 否则编译期会报「未知组件」。
-`vite.config.ts` / `vitest.config.ts` 的其余部分与 `games/yunduan-dieta/vite.config.ts` 同口径，
+`vite.config.ts` / `vitest.config.ts` 的其余部分与 `templates/iaa-ui/vite.config.ts` 同口径，
 只是把 `uiPlugin(...)` 的参数换成 `UI_COMPILE_OPTIONS`。
 
 ### 2.3 数据通道：布局期和绘制期用同一份 data

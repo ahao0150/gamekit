@@ -149,3 +149,8 @@ export const createUi: CreateUi = (): UiService => ({ computeRect, isInside, cla
 // 见 split.ts 文件头（为什么需要、权重写法、非法参数直接抛错）。
 export { findOverlaps, gridOf, ratiosSum, splitCols, splitRows } from './split';
 export type { Ratios } from './split';
+
+// 滚动交互状态机（拖动 / 惯性 / 边界钳制）：见 scroll.ts 文件头为什么是纯函数。
+// 注意与 `widgets/scroll.ts` 的**组件** `scroll` 不同名、不冲突：这里全是纯函数与状态类型。
+export { IDLE_SCROLL, scrollClamp, scrollDragEnd, scrollDragMove, scrollDragStart, scrollTick } from './scroll';
+export type { ScrollState } from './scroll';

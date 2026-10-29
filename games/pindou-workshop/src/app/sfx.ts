@@ -1,5 +1,5 @@
 /**
- * 音效接线：把 runtime 的 `core/audio` 接到平台音频句柄上（形制照 kuaidi-load 的 sfx.ts）。
+ * 音效接线：把 runtime 的 `core/audio` 接到平台音频句柄上（沿用同一套接法）。
  *
  * **本工程目前没有音频资源**：`assets/` 下只有一张 `ui/btn.png`，构建注入的
  * `virtual:mg-manifest` 里没有任何 `sfx/*` key。所以：

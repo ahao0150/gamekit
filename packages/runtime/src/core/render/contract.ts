@@ -32,6 +32,14 @@ export interface TextStyle {
   readonly color?: string;
   /** 多行行高（逻辑像素）；不传则按 size × 1.2 */
   readonly lineHeight?: number;
+  /**
+   * 单行最大宽度：>0 时透传给 `ctx.fillText` 的第四参，超宽由 canvas **横向压缩**兜住。
+   *
+   * 为什么要有：折行按估算算行数（布局期没有 ctx），真实字宽与估算之间有偏差；
+   * 偏差方向是「估窄了 → 文字比预期宽」，靠这个参数把最坏情况压成「字被压窄」，
+   * 而不是「溢出容器」。
+   */
+  readonly maxWidth?: number;
   /** 描边宽度；>0 时先描边后填充 */
   readonly strokeWidth?: number;
   readonly strokeColor?: string;

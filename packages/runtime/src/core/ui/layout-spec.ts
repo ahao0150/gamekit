@@ -123,6 +123,15 @@ export interface NodeSpec {
   readonly size?: Size;
   /** 交叉轴尺寸；`align: 'stretch'` 时被忽略（交叉轴拉满）。 */
   readonly cross?: Size;
+  /**
+   * 宽高比（v0.7）：统一是 `w / h` 的比值。`1` 正方形、`16:9` 横宽、`9:16` 竖长。
+   *
+   * 词法侧（`parse-tokens.ts` 的 `readAspect`）把 `16:9` 折成四位小数；求解在
+   * `layout-aspect.ts`。**必须且只能有一个已知轴**：交叉轴确定（`cross` 或
+   * `align stretch`）时推主轴，主轴确定（`size` 是 `fixed` / `ratio`）时推交叉轴；
+   * 两轴都确定（轴冲突）或都不确定（缺已知轴）都报错，错误进 `errors`、不抛异常。
+   */
+  readonly aspect?: number;
   /** 覆盖父 stack 的交叉轴对齐（`.ui` 里 `put pause align end` 就是这个）。 */
   readonly align?: Align;
   readonly stack?: StackSpec;

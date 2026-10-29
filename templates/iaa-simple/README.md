@@ -89,7 +89,7 @@ pnpm -w verify-platform        # 等价于 node templates/iaa-simple/tools/verif
 **端口归属**：dev 模式走**真实 CLI 路径** —— `mg dev --port <探测到的空闲端口> --strict-port`。
 `--strict-port` 是关键：端口被占用时 CLI 报错退出（exit 1），绝不静默顺延到别的端口。
 静默换端口的后果是浏览器打到同机另一个服务上，dev 那半边矩阵在测别的游戏却全绿 ——
-实测踩过：我的 `mg dev` 打印 5174，而 5174 的 IPv4 上是 kuaidi-load 的静态服务。
+实测踩过：我的 `mg dev` 打印 5174，而 5174 的 IPv4 上被别的项目的静态服务占着。
 CLI 的 dev 固定绑 `127.0.0.1`（日志报**实际**绑定的 host:port），不用 `localhost`，
 避开双栈机器上 IPv4/IPv6 各占一个端口的坑。
 `mg dev --port 8080 --strict-port` 也可以直接手动用。

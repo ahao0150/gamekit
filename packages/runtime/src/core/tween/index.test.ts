@@ -73,8 +73,8 @@ describe('缓动曲线（docs/motion.md §4）', () => {
     expect(CURVES.in).toEqual({ x1: 0.4, y1: 0, x2: 1, y2: 1 });
     expect(CURVES.back).toEqual({ x1: 0.34, y1: 1.56, x2: 0.64, y2: 1 });
     expect(MOTION.ms).toEqual({ instant: 60, micro: 120, state: 240, emphasis: 480 });
-    // MOTION.squash 已删（2026-10-20 定稿）：那是「包裹落位」的业务表现参数，
-    // 不属 runtime 原语；唯一真源在 games/kuaidi-load/src/app/motion/timelines.ts 的 LANDING。
+    // MOTION.squash 已删（2026-10-20 Chief 拍板）：那是「包裹落位」的业务表现参数，
+    // 不属 runtime 原语；唯一真源在某个老游戏的 timelines 模块里。
     expect(MOTION.spring.tap).toEqual({ stiffness: 1400, damping: 52, mass: 1 });
     expect(MOTION.spring.settle).toEqual({ stiffness: 900, damping: 39, mass: 1 });
     expect(MOTION.stagger).toEqual({ step: 60, max: 4 });

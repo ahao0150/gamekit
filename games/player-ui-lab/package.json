@@ -1,0 +1,19 @@
+{
+  "name": "mg-player-ui-lab",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SVG 先行实验：按 player-390.svg 还原的音乐播放器 UI（零素材，纯 Canvas 绘制）",
+  "scripts": {
+    "dev": "mg dev",
+    "build": "mg build --all",
+    "check": "mg check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mg/runtime": "workspace:*"
+  },
+  "devDependencies": {
+    "@mg/cli": "workspace:*"
+  }
+}

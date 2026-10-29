@@ -79,7 +79,7 @@ export interface ComponentTheme {
   readonly disabled: string;
 }
 
-/** 默认主题：沿用《快递装车员》的深墨 / 浅字口径。 */
+/** 默认主题：沿用某个游戏的深墨 / 浅字口径。 */
 export const DEFAULT_THEME: ComponentTheme = {
   fontFamily: 'sans-serif',
   ink: '#1B211F',

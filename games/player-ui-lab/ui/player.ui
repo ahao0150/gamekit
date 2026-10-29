@@ -1,0 +1,25 @@
+# 播放器界面：按 experiments/svg-first/design/player-390.svg 逐区域翻译。
+#
+# 响应式口径（2026-10-29 改）：
+# - `fit: fill` → 画布 = 视口，布局坐标就是真实屏幕尺寸，不再留黑边。
+# - 间距 / 内边距用**比例**（基数：横向按视口宽、纵向按视口高）；字号与触控目标保持固定像素。
+# - 百分比取到 4 位小数，使 390×844 档算出与设计稿**逐像素相同**的值
+#   （例：24/390 = 6.153846% → 写 6.1538%，390 档 = 23.99982 → round2 = 24.00）。
+# - 19 个 data-name 里只有 9 个进这里；另外 10 个是复合组件内部件，由 partsOf(box) 算出。
+
+region header top 10% row gap 3.0769% pad-x 6.1538% align center justify space-between
+put backBtn size fixed 44 cross fixed 44
+put headerTitle size fill cross fixed 20 style text="正在播放 · NOW PLAYING"
+put moreBtn size fixed 44 cross fixed 44
+
+region stage fill column gap 2.84408% pad-x 9.2308% pad-y 3.7346% align center justify center
+# aspect 1（v0.7）：box 本身就是正方形 —— 命中区不再有左右死区，对拍也能比真实形状。
+# 主轴 fill 吃剩余、上限由容器宽推（318）；320 档容器宽 260.92、剩余 165.79 → 取小的那个。
+put albumCover size fill aspect 1
+put songTitle size fixed 40 cross 100% style text="晚风告白"
+put artistName size fixed 20 cross 100% style text="林晚 · 专辑《归途》"
+put progressBar size fixed 44 cross 100% style progress=0.35
+
+region dock bottom 26.5% column gap 0 pad-x 7.1795% pad-y 1.5% align center justify space-between
+put primaryControls size fixed 84 cross 100%
+put secondaryRow size fixed 44 cross 100%

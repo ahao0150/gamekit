@@ -74,7 +74,7 @@ export interface CapsuleSpec {
   readonly mid: number;
 }
 
-/** 默认胶囊规格（《快递装车员》的按钮素材）。 */
+/** 默认胶囊规格（某个游戏的按钮素材）。 */
 export const DEFAULT_CAPSULE: CapsuleSpec = { w: 336, h: 126, cap: 63, mid: 8 };
 
 /**

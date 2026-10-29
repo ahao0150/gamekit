@@ -1,4 +1,4 @@
-﻿/**
+/**
  * `.ui` 编译函数测试。
  *
  * 测的是「编译产物」这一层：产物必须是**纯数据**（JSON 可序列化，不能混进函数）、
@@ -67,5 +67,23 @@ describe('compileUi', () => {
       knownComponents: ['primaryButton'],
     });
     expect(bad.errors[0]).toContain('未知组件');
+  });
+
+  it('aspect（v0.7）：产物带 aspect 字段，组合错误与 parse 同源（编译期不重复实现）', () => {
+    const ok = compileUi('region body fill column align start\nput cover cross 100% aspect 1\n', 'ui/home.ui');
+    expect(ok.errors).toEqual([]);
+    const child = ok.module?.spec.regions[0]?.node?.stack?.children[0];
+    expect(child?.aspect).toBe(1);
+
+    // 同一条文案，只有文件名前缀由 compileUi 补——证明校验只在 parse 里实现了一次
+    const bad = compileUi('region body fill\nput cover size 100 cross 50 aspect 1\n', 'ui/home.ui');
+    expect(bad.code).toBe('');
+    expect(bad.errors[0]).toContain('ui/home.ui:2:');
+    expect(bad.errors[0]).toContain('aspect 的轴冲突');
+
+    // v0.7 修正：size fill + aspect 合法，产物能编译出来
+    const fillOk = compileUi('region body fill\nput cover size fill aspect 1\n', 'ui/home.ui');
+    expect(fillOk.errors).toEqual([]);
+    expect(fillOk.module?.spec.regions[0]?.node?.stack?.children[0]?.aspect).toBe(1);
   });
 });

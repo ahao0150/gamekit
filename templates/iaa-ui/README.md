@@ -29,7 +29,7 @@ templates/iaa-ui/
   src/main.ts          # 入口：resolvePlatform → createGame → start
   src/env.d.ts         # declare module '*.ui'（类型声明，缺了 tsc 会红）
   src/app/
-    ui-registry.ts     # 内置 9 个业务件 + 通用 22 个 = 31 个组件
+    ui-registry.ts     # 内置 9 个业务件 + 通用 25 个 = 34 个组件
     deps.ts            # runtime 依赖汇聚点（唯一直接 import runtime 的文件）
     layout.ts          # bindComponents → layout → rects / paintOrder / meta
     render.ts          # 按 paintOrder 正序画
@@ -101,7 +101,7 @@ registry.register(
 - 界面层：`ui.check` 两视口（离线，不需要注册表；`size auto` 会报 0×0 是预期）
 - 运行时：`games/ui-demo/tools/verify-{ui,runtime,input}.mjs` 是「真实鼠标/键盘驱动」的写法参照。
   ⚠ `verify-input.mjs` 用 puppeteer，而仓库里**没装** puppeteer —— 它靠 `createRequire` 从本机另一个
-  项目借（文件里硬编码了 `projects/tanqiu-fengbao` 的路径）。新游戏照抄时要换成自己的 CDP 客户端
+  项目借（文件里硬编码了一个本地项目的路径）。新游戏照抄时要换成自己的 CDP 客户端
   （`templates/iaa-simple/tools/lib/harness.mjs` 是零依赖的那套），否则换台机器就跑不了。
 - **截图必须肉眼确认画面内容**：状态全绿但画面空已经复现过三次。打开截图确认按钮/格子/文字真的在画面上。
 - 平台门禁：`node templates/iaa-simple/tools/verify-platform.mjs`（测的是 iaa-simple 老链，
@@ -112,7 +112,7 @@ registry.register(
 | | iaa-simple | iaa-ui |
 |---|---|---|
 | 布局 | 手写 `computeLayout`（坐标用比例算） | `.ui` 描述（约束） |
-| 组件 | 自己画 | 注册表 + 31 个现成组件（9 内置业务件 + 22 通用件） |
+| 组件 | 自己画 | 注册表 + 34 个现成组件（9 内置业务件 + 25 通用件） |
 | 命中 | 手写 `hitTest` | `pickHit`（层级 + block/self/none） |
 | 适用 | 单屏极简 demo | 有多个界面 / 浮层 / 列表的游戏 |
 

@@ -3,7 +3,6 @@ import { configDefaults, defineConfig } from 'vitest/config';
 import { uiPlugin } from './packages/ui-plugin/src/index';
 
 /**
- * 《快递装车员》只在完整版仓库里；开源版（GitHub）不带这个游戏。
  *
  * 但有两个测试文件在**模块顶层**就静态引用了它的 `ui/home.ui` 与 `src/app/layout`，
  * 目录不存在时整个文件加载即崩（`ENOENT` / `Cannot find module`），`pnpm -w test` 直接红，
@@ -11,11 +10,7 @@ import { uiPlugin } from './packages/ui-plugin/src/index';
  *
  * 按目录存在性决定是否排除：完整版照跑这两个测试，开源版自动跳过。
  */
-const HAS_KUAIDI_LOAD = existsSync(new URL('./games/kuaidi-load', import.meta.url));
 
-/** 依赖 `games/kuaidi-load` 的测试文件（完整版才跑）。 */
-const KUAIDI_ONLY_TESTS = [
-  '**/packages/runtime/src/core/ui/layout.kuaidi.test.ts',
   '**/packages/debug-mcp/src/ui-tools.test.ts',
 ];
 
@@ -39,8 +34,7 @@ export default defineConfig({
       'templates/**/src/**/*.test.ts',
       'tools/**/*.test.mjs',
     ],
-    // 保留 vitest 的默认排除（node_modules / dist 等），只在缺 kuaidi-load 时追加两个文件。
-    exclude: [...configDefaults.exclude, ...(HAS_KUAIDI_LOAD ? [] : KUAIDI_ONLY_TESTS)],
+    exclude: [...configDefaults.exclude],
     environment: 'node',
     globals: false,
   },

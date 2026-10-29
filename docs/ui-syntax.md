@@ -1,4 +1,4 @@
-# `.ui` 语法规范 v0.6
+# `.ui` 语法规范 v0.7
 
 > AI 专用界面描述语言。目标：**扁平、无嵌套、可定位到行、可直接静态断言**。
 > API 对应 `packages/runtime/src/core/ui/layout.ts` 的 `NodeSpec` / `StackSpec` / `SizeSpec`。
@@ -89,10 +89,11 @@ region <name> <top|bottom|fill> <n|n%> [row|column] [gap <n>] [pad <n>] [pad-x <
 | `gap`（column 方向） | 视口高 |
 | `gap`（row 方向） | 视口宽 |
 | `put size` / `put cross` | 可用空间（父容器主轴/交叉轴） |
+| `put aspect` | **不适用**：`aspect` 是比值不是长度，不参与百分比换算 |
 
 **统一规则：水平方向的百分比用视口宽，垂直方向的用视口高。**
 
-**为什么必须有**（v0.2 只做了 region 高度，v0.3 扩全）：固定像素的边距在窄屏上占比会变大——《快递装车员》旧布局的左右边距是 `0.05W`（390 = 19.5px、320 = 16px），而 `.ui` 写成固定 19.5px 后，320 下内容区窄了 7px，连锁把卡片和按钮都挤歪。我当时用「小间距对屏宽不敏感」当理由简化，实测证明这个判断是错的。
+**为什么必须有**（v0.2 只做了 region 高度，v0.3 扩全）：固定像素的边距在窄屏上占比会变大——某个游戏旧布局的左右边距是 `0.05W`（390 = 19.5px、320 = 16px），而 `.ui` 写成固定 19.5px 后，320 下内容区窄了 7px，连锁把卡片和按钮都挤歪。我当时用「小间距对屏宽不敏感」当理由简化，实测证明这个判断是错的。
 
 ---
 
@@ -119,7 +120,7 @@ put button size fixed 180 cross 180 style text="0 / 3"
 ```
 
 > 示例统一用通用件 `button`。别照抄 `games/ui-demo` 里的 `tapTarget` —— 那是 ui-demo 的自定义件，
-> 不在内置 9 个 / 通用 22 个里，写进新游戏会报「未知组件 'tapTarget'」。
+> 不在内置 9 个 / 通用 25 个里，写进新游戏会报「未知组件 'tapTarget'」。
 
 | 取值 | 语义 |
 |---|---|
@@ -225,7 +226,7 @@ put label size fill style text="+1 金币" fontSize=16 align=center
 ## 4. `put` 语法
 
 ```
-put <component> [size <尺寸>] [cross <尺寸>] [align <a>] [hit <mode>] [style <k>=<v> ...]
+put <component> [size <尺寸>] [cross <尺寸>] [aspect <r|w:h>] [align <a>] [hit <mode>] [style <k>=<v> ...]
 ```
 
 | 部分 | 必填 | 说明 |
@@ -233,6 +234,7 @@ put <component> [size <尺寸>] [cross <尺寸>] [align <a>] [hit <mode>] [style
 | `component` | ✅ | 组件名（必须已在组件注册表里，否则**报错**） |
 | `size` | ❌ | **主轴**尺寸，默认 `auto` |
 | `cross` | ❌ | **交叉轴**尺寸，默认跟随 region 的 `align` |
+| `aspect` | ❌ | 宽高比（v0.7）：`<r>` 或 `<w>:<h>`，折成 `w/h`；与 `size` / `cross` 联合决定另一轴，见 §4.2 |
 | `align` | ❌ | 覆盖该元素在交叉轴上的对齐 |
 | `hit` | ❌ | 命中语义（v0.5）：`self`(默认) / `block` / `none`，见 §4.1 |
 | `style` | ❌ | 组件参数，`key=value` 对，值可带引号 |
@@ -245,6 +247,7 @@ put <component> [size <尺寸>] [cross <尺寸>] [align <a>] [hit <mode>] [style
 | `auto` | 由组件自己的 `measure()` 决定 | 图标按素材尺寸 |
 | `fixed <n>` 或直接 `<n>` | 固定逻辑像素 | `size 24` |
 | `ratio <r>` 或 `<r>%` | 占可用空间的比例 | `size 50%` |
+| `aspect <r>` | **不是尺寸**：已知一轴时按宽高比推另一轴 | `cross 100% aspect 1`（正方形） |
 
 ---
 
@@ -257,6 +260,88 @@ put <component> [size <尺寸>] [cross <尺寸>] [align <a>] [hit <mode>] [style
 | `none` | 完全透明，点击穿透到下面的元素 | 纯装饰、只读文字 |
 
 命中顺序 = 绘制顺序的**逆序**（谁画在上面谁先接点击），由 `hit.ts` 的 `pickHit` 从 `layout()` 输出的 `meta` 推出。默认 `self` 保证老界面的按钮行为零变化。
+
+---
+
+## 4.2 宽高比：aspect（v0.7）
+
+```txt
+put albumCover cross 100% aspect 1
+put banner     size fixed 200 aspect 16:9
+put avatar     align stretch aspect 1
+```
+
+| 写法 | 说明 |
+|---|---|
+| `aspect <r>` | 纯数字，`r = w / h`：`1` 正方形、`2` 横宽一倍、`0.5` 竖长一倍 |
+| `aspect <w>:<h>` | 宽高比写法，同样折成 `r = w / h`：`16:9` → `1.7778` |
+
+**`aspect` 是 `put` 的同级修饰词，不是 `size` 的值。** `ratio` 已经被「占可用空间比例」占用（见上面「尺寸写法」），所以比值只能用另一个词。
+
+### 求解语义：必须且只能有一个「已知轴」
+
+| 写法 | 已知轴 | 推出 | 说明 |
+|---|---|---|---|
+| `cross <非 fill>` + `aspect` | 交叉轴 | 主轴 = 交叉轴按 aspect 换算 | 最常用（封面撑满宽度且正方形） |
+| `align stretch` + `aspect` | 交叉轴 = 容器交叉轴 | 主轴同上 | stretch 时 `cross` 被忽略，正好当已知轴用 |
+| `size <fixed / 数字 / 百分比 / ratio>` + `aspect` | 主轴 | 交叉轴按 aspect 换算 | 横幅按高度定宽 |
+| `size fill` + `aspect` | 主轴 = 剩余空间（上限是交叉轴拉满时的主轴） | 交叉轴按 aspect 换算 | **合法**（v0.7 修正）：在剩余空间里尽量大且保持比例，见下节 |
+| `size auto` + `aspect`（**显式写**） | — | **报错** | auto 由 `measure()` 决定，不能再由 aspect 推 |
+| `size` 与 `cross` 同时确定 + `aspect` | 两个轴都定了 | **报错（轴冲突）** | 没有需要 aspect 推的那一轴 |
+| `size fill` + 确定 `cross` + `aspect` | 主轴和交叉轴都被占了 | **报错（轴冲突）** | fill 要吃剩余空间、cross 又给了确定值，aspect 没有活干 |
+| 只有 `aspect`，无 `size` 无 `cross` 无 stretch | — | **报错（缺少已知轴）** | 一个轴都没定 |
+
+报错**分两类、文案不同**：`aspect 的轴冲突：…` 与 `aspect 缺少已知轴：…`。都不抛异常，进 `layout().errors` / `ui.check`；解析期（`.ui`）的错误带行号。
+
+**换算方向（别搞反）**：
+
+| 方向 | 交叉轴 | 主轴 | 已知交叉轴 | 已知主轴 |
+|---|---|---|---|---|
+| `column` | 宽 `w` | 高 `h` | `h = w / r` | `w = h × r` |
+| `row` | 高 `h` | 宽 `w` | `w = h × r` | `h = w / r` |
+
+**为什么必须在第一遍之前算**：`layoutStack` 第一遍用主轴推进 `cursor`，所以「由交叉轴推主轴」不能推到第二遍。`crossLen` 在第一遍本来就已知（`align stretch` 的交叉轴就是它），因此不改变求解顺序。`size fill` + `aspect` 的主轴上限同理——必须先用 `min(flexSize, mainLimit)` 定下 `main` 再推进 cursor；「第一遍按 flexSize、第二遍回退改 main」会让 cursor 与 `free` 全部错位。
+
+### `size fill` + `aspect`（v0.7 修正：合法）
+
+「在剩余空间里尽量大、且保持比例」是最常用的场景，和 `fill` 的语义天然配套。
+
+1. 主轴基线 = 剩余空间 `flexSize`（现有 fill 算法不变：`remain / fill 个数`）
+2. 交叉轴 = 主轴按 aspect 换算
+3. **若交叉轴会超过 `crossLen`**：主轴钳到「交叉轴拉满 `crossLen` 时的主轴」——
+   `main = min(flexSize, mainLimit)`，`mainLimit = 交叉轴拉满时的主轴`
+4. 被钳小的差额**不重新分给别的 fill 元素**，而是留在 `remain` 里交给 `justify`
+   （与「fill 先吃、剩下的才交给 justify」的既有语义一致）
+5. `align stretch` + `size fill` + `aspect`：**aspect 优先，stretch 不生效**，也不报错
+
+实测（`player.ui` 的内存改写版，只把 `albumCover` 从 `cross 100% size fill` 改成 `size fill aspect 1`）：
+
+| 档位 | 容器（主轴 × 交叉轴） | 结果 | 谁在钳 |
+|---|---|---|---|
+| 390×844 | 296.9 × 318 | `296.89 × 296.89` | 主轴（剩余空间），`296.9 < mainLimit 318` |
+| 320×568 | 165.79 × 260.92 | `165.79 × 165.79` | 主轴（剩余空间），`165.79 < mainLimit 260.92` |
+
+两档 **`errors=[]`**。对比 `cross 100% aspect 1`（同一份 `player.ui`）：它把封面撑到容器宽（318 / 260.92），正方形高度装不下，`stage` 主轴溢出 **21.11px / 95.13px**。
+
+**要「撑满宽度」用 `cross 100%`；要「在剩余空间里尽量大」用 `size fill`。** 后者在元素多的 region 里才不溢出。
+
+### 为什么加（推翻「不新增 aspect」的结论）
+
+v0.3 附写过「**不新增** `aspect` / 按宽度算高度原语」，理由是「格子自适应车厢是组件自己的知识」。这条有边界，已被实战推翻：
+
+`games/player-ui-lab` 的专辑封面必须正方形。没有 `aspect` 只能 `cross 100%` + 组件内部 `side = min(box.w, box.h)` 绕，代价是**组件的 box 与视觉正方形不重合**：① 位置对拍只能比 box、比不了真实形状；② 命中区比看到的方块大一圈（左右各多出 `(box.w - side)/2`）。
+
+**「布局语言只管占位，内容尺寸归组件」这条没变**；变的是归类——「正方形 / 16:9」是**占位约束**，不是内容尺寸。格子铺几行、字号多大，仍然归组件 `measure()`。
+
+### 实测值（容器宽 100 的 column）
+
+| 写法 | 结果 rect |
+|---|---|
+| `cross 100% aspect 1` | `w=100, h=100` |
+| `cross 100% aspect 16:9` | `w=100, h=56.25` |
+| `size 100 aspect 16:9` | `h=100, w=177.78` |
+| `size fill aspect 1`（容器 60 宽 × 200 高、两个 fill） | 被 cross 钳：`60×60`；另一个 fill 仍是 100（差额进 free，不重分配） |
+| `aspect 16:9` 的解析值 | `1.7778`（保留四位小数） |
 
 ---
 
@@ -386,12 +471,14 @@ v0.4 之前同一界面内的组件只能顺序流排，表达不了「浮层盖
 |---|---|---|
 | v0.1 | 首版：三个动词、四种尺寸、错误格式、编译产物 | — |
 | **v0.2** | ① `region` 的 `top`/`bottom` 支持百分比（基数=视口高）② 新增 `pad-x` / `pad-y` ③ `put` 的 `size` 支持 `50%` 写法 | 实现 T5 时发现两个缺口：固定像素带高在 320×568 上溢出 198px（只能表达固定设计稿）；`pad` 四边同值无法表达「只要左右留白」，逼得用「带高 + 2×pad + 空带补偿」的绕法 |
-| **v0.3** | ① `pad` / `pad-x` / `pad-y` / `gap` **全部支持百分比** ② 明确基数规则：水平方向用视口宽、垂直方向用视口高 | 实测推翻 v0.2 的简化：kuaidi 旧布局左右边距是 `0.05W`（390=19.5、320=16），固定 19.5px 在 320 下让内容区窄 7px，连锁挤歪卡片和按钮，footer 溢出 2.95px |
+| **v0.3** | ① `pad` / `pad-x` / `pad-y` / `gap` **全部支持百分比** ② 明确基数规则：水平方向用视口宽、垂直方向用视口高 | 实测推翻 v0.2 的简化：某个老游戏的旧布局左右边距是 `0.05W`（390=19.5、320=16），固定 19.5px 在 320 下让内容区窄 7px，连锁挤歪卡片和按钮，footer 溢出 2.95px |
 | **v0.4** | ① `region` 新增主轴对齐 `justify start|center|end|space-between`（默认 `start`，旧布局零变化）② `fill` 子元素先吃剩余空间，剩下的才交给 justify | 写 `games/ui-demo` 时三个界面都要「一组元素在主轴居中」，只能靠「两个空 `fill` region 夹住」，每多一个居中块多两行、百分比还要凑 100%。T11 落地后 menu / play / result 的 `gap1`/`gap2`/`gapTop`/`gapBottom` 全部删掉 |
 | **v0.5** | ① 分段行 `layer base|overlay`：overlay 每个 region 是独立整屏坐标系、彼此重叠，层序 base < overlay ② `put` 新增 `hit self|block|none`（默认 `self`，与旧行为等价）③ `layout()` 新增 `paintOrder` / `meta` | 弹窗、Toast、引导这类浮层表达不了「盖在基础层之上」；命中按声明顺序而不是「谁画在上面」，遮罩吃不掉点击。T13b 落地后 `games/ui-demo/ui/popup.ui` 用两层 + `hit block` 验证 |
 | v0.5 修订 | `style` 的**带引号值保持字符串**，不再被数字化（`text="3"` → `'3'`）；不带引号才走布尔/数字转换 | 写通用组件 `badge` 时 `text="3"` 被转成 number，声明为 `string` 的参数校验报错，只能改用 `text="99+"` 绕过。引号本来就是显式字符串意图（T16） |
 | **v0.6** | ① `region` 新增任意位置 `at <x> <y>`（**中心点**，不是左上角）+ 必填的 `size <w> <h>` ② overlay 的 `edge` 可省略（本来就不参与求解）③ `at` 只在 overlay 有效、必须与 `size` 成对，违反都**报错**；`size` 超视口钳到视口并进 `errors` | 九宫格（`justify` + `align`）拼不出「角色头顶的对话框 / 某个坐标的物品详情 / 随机位置的飘字」。T33 落地后 `games/ui-demo/ui/at-anywhere.ui` 用两个 `at` region 验证；390×844 下 `at 30% 70% size 60% 18%` = `x=0, y=514.84, w=234, h=151.92` |
-| v0.3 附 | **不新增** `aspect` / 「按宽度算高度」原语。`parcelGrid` 的高度由组件 `measure()` 决定（`.ui` 写 `size auto`），因为「格子自适应车厢」是组件自己的知识，不是布局语言该管的 | 320 视口下 `cell = min(W×0.84/cols, H×0.32/rows)` 是宽度驱动，`.ui` 的百分比表达不了；但这不是布局语言的缺陷——**布局语言只管占位，内容尺寸归组件** |
+| **v0.7** | ① `put` 新增 `aspect <r>` / `<w>:<h>`（**同级修饰词，不是 `size` 的值**）：从一个已知轴按 `w/h` 推另一轴 ② 组合校验：显式 `size auto` / `size`+`cross` 双确定 / `size fill`+确定 `cross` / 无任何已知轴 都**报错**，文案区分「轴冲突」与「缺少已知轴」 ③ `aspect 16:9` 折成四位小数 `1.7778`，`NodeSpec.aspect` 存 `w/h` | `games/player-ui-lab` 的专辑封面必须正方形，没有原语只能 `cross 100%` + 组件内 `side = min(box.w, box.h)` 绕，组件 box 与视觉正方形不重合（位置对拍只能比 box；命中区左右各多 `(box.w - side)/2`）。**推翻 v0.3 附「不新增 aspect」的结论**，见 §4.2 |
+| **v0.7 修订** | `size fill` + `aspect` 由「报错」改为**合法**：`main = min(flexSize, mainLimit)`，被钳小的差额进 `free` 交给 `justify`；`align stretch` 与 `size fill` 同时出现时 aspect 优先 | 初版把 fill 判成「与 aspect 争主轴」站不住。`player.ui` 实测 `cross 100% aspect 1` 在 390/320 两档分别溢出 **21.11px / 95.13px**（封面撑到容器宽后正方形高度装不下）；改成 `size fill aspect 1` 后两档都是 `errors=[]`，得 `296.89×296.89` / `165.79×165.79` |
+| ~~v0.3 附~~ → **v0.7 已推翻** | ~~**不新增** `aspect` / 「按宽度算高度」原语。`parcelGrid` 的高度由组件 `measure()` 决定（`.ui` 写 `size auto`），因为「格子自适应车厢」是组件自己的知识，不是布局语言该管的~~ **这条作废，理由见 §4.2**：正方形 / 16:9 实际是**占位约束**，不是内容尺寸；组件 box 与视觉形状不重合会连累命中区与对拍 | v0.3 把「按宽度算高度」整个归给组件是过度概括。**「内容尺寸（格子铺几行、字号多大）归组件 `measure()`」这条不变** |
 
 ---
 
@@ -401,19 +488,19 @@ v0.4 之前同一界面内的组件只能顺序流排，表达不了「浮层盖
 
 | 类别 | 来源 | 用在哪 |
 |---|---|---|
-| **业务件**（新游戏不要用） | `packages/runtime/src/core/ui/builtin.ts` 的 `BUILTIN_COMPONENTS`，9 个 kuaidi 专用件（按代码顺序）：`primaryButton` `secondaryButton` `coinBadge` `statusText` `pause` `parcelGrid` `infoPanel` `card0` `card1` | 源头是《快递装车员》的业务语义（包裹格 / 金币角标 / 暂停键）；iaa-ui 模板默认也全部注册，但新界面优先用通用件。**`tapTarget` / `scorePanel` 不在这里** —— 它们是 `games/ui-demo/src/app/ui-registry.ts` 里的自定义件，新游戏里写会报「未知组件」 |
-| **通用件**（推荐） | `packages/runtime/src/core/ui/widgets/`，`createWidgetRegistry()` 一次装 22 个（含 T31 新增的 `grid` / `scroll`、T34 新增的 `input`） | 任何新界面；颜色走 `DrawDeps.theme`，素材缺失回落纯色 |
+| **业务件**（新游戏不要用） | `packages/runtime/src/core/ui/builtin.ts` 的 `BUILTIN_COMPONENTS`，9 个内置业务件（按代码顺序）：`primaryButton` `secondaryButton` `coinBadge` `statusText` `pause` `parcelGrid` `infoPanel` `card0` `card1` | 源头是某个已上线游戏的业务语义（格子 / 角标 / 暂停键）；iaa-ui 模板默认也全部注册，但新界面优先用通用件。**`tapTarget` / `scorePanel` 不在这里** —— 它们是 `games/ui-demo/src/app/ui-registry.ts` 里的自定义件，新游戏里写会报「未知组件」 |
+| **通用件**（推荐） | `packages/runtime/src/core/ui/widgets/`，`createWidgetRegistry()` 一次装 25 个（含 T31 新增的 `grid` / `scroll`、T34 新增的 `input`、聊天三件 `chatBubble` / `chatList` / `chatComposer`） | 任何新界面；颜色走 `DrawDeps.theme`，素材缺失回落纯色 |
 
-两者合计 **31 个**（iaa-ui 模板的 `createRegistry()` 就是这 31 个）；`games/ui-demo` 另加
-`tapTarget` / `scorePanel` 两个自定义件，合计 33 个。
+两者合计 **34 个**（iaa-ui 模板的 `createRegistry()` 就是这 34 个）；`games/ui-demo` 另加
+`tapTarget` / `scorePanel` 两个自定义件，合计 36 个。
 
 ```ts
 import { createWidgetRegistry } from '…/packages/runtime/src/core/ui/widgets';
-const registry = createWidgetRegistry();     // 22 个通用组件
+const registry = createWidgetRegistry();     // 25 个通用组件
 const bound = bindComponents(parsed.spec, { registry, env: { viewport, data } });
 ```
 
-### 22 个通用组件
+### 25 个通用组件
 
 | 组件 | 主要 props（默认值） | 说明 |
 |---|---|---|
@@ -426,6 +513,8 @@ const bound = bindComponents(parsed.spec, { registry, env: { viewport, data } })
 | `divider` | `direction`(horizontal) `thickness`(1) `color` | 分割线 |
 | `avatar` | `image` `shape`(circle/rounded) `radius`(12) | 头像；圆形用 `clip` 真裁切 |
 | `list` | `itemH`(56) `gap`(0) `scrollTop`(0) `virtual`(true) `divider`(false) `itemColor` `dividerColor` `emptyText` | 列表；数据 `items` + `renderItem`，`virtual` 时 1 万项只画可见的几项 |
+| `list`（变高） | 同上；改由数据侧给高度 | `data.itemHeights: readonly number[]`（长度必须等于 `items`，不等直接抛错）。给了就走变高：每项用自己高度、`itemH` 不参与定位；高度用 `measureItemHeights(items, width, opts)` 预算，别在 draw 里量 |
+| 折行工具 | `wrapText(text, maxWidth, style?, measure?)` | 返回 `readonly string[]`：`\n` 强制断行、CJK 按字符断、西文优先空格断、单字符超宽独占一行、`maxWidth <= 0` 按 `\n` 原样切 |
 | `input` | `value` `placeholder` `maxLength`(20) `textSize` `bgColor` `borderColor` `radius`(8) `focused`(false) | 输入框，默认 280×48；**只画不弹键盘**——点它以后由游戏调 `platform.keyboard.open({ rect })`，`focused` 决定画不画光标（500ms 闪烁，不用定时器）；超长先按码点截、再按宽度截并补 `…` |
 | `toast` | `text` `textSize`(16) `icon` `opacity`(1) `bgColor` `textColor` `radius`(8) | 轻提示，高固定 44；位置由 overlay region 决定 |
 | `slider` | `value`(0) `knobSize`(20) `trackColor` `fillColor` `knobColor` `disabled`(false) `direction`(horizontal) | 滑杆；填充长 = value × (轨道长 − 滑块直径) |
@@ -439,6 +528,9 @@ const bound = bindComponents(parsed.spec, { registry, env: { viewport, data } })
 | `carousel` | `index`(0) `offset`(0) `loop`(false) `indicator`(true) `indicatorSize`(6) `indicatorGap`(8) `indicatorColor` `indicatorActiveColor` `pageGap`(0) | 轮播；数据 `pages` + `renderItem`，只画可见的前后两页 |
 | `grid` | `cols`(4) `cellH`(56) `gapX`(8) `gapY`(8) `scrollTop`(0) `virtual`(true) `itemColor` `emptyText` | 网格容器；`cellW = (w − gapX×(cols−1))/cols`，只画可见行、clip 到自身，最后一行不满不画空格 |
 | `scroll` | `scrollTop`(0) `contentH`(0) `bgColor` | 通用滑动容器：只 `clip` + `translate(0,-scrollTop)`，内容由 `renderContent` 画（接收**未平移**的 box） |
+| `chatBubble` | `text` `name` `avatar` `side`(left) `fontSize`(15) `bubbleRatio`(0.72) `showAvatar`(true) `state`(sent) | 单条消息气泡（NPC 头顶一句台词）。几何唯一真源是 `bubbleParts(box, opts)`：`measure` 与 `draw` 调同一个，不各算一套。`state=failed` 时气泡左缘画 3px 警示条（`#C2543F`，主题 8 色里没有 error 位） |
+| `chatList` | `itemGap`(8) `bubbleRatio`(0.72) `fontSize`(15) `showTime`(true) `showAvatar`(true) `emptyText` `scrollTop`(0) `selfId`(me) | 聊天列表：**变高**虚拟列表，项高按文字折行算（前缀和 + 二分定位）。**没有 `itemH` / `itemHeights` / `lineHeight` / `heights`** —— 高度由组件按 `text` 算，手填会和折行结果对不上，那正是这个组件要消掉的 bug；写进去会报「不是合法参数」。数据 `items`；左右分流看 `selfId` |
+| `chatComposer` | `value` `placeholder`(说点什么…) `maxLength` `sendText`(发送) `sendWidth`(56) `focused`(false) `sending`(false) | 聊天输入条，**只画不弹键盘**（与 `input` 同路子：点它以后由游戏调 `platform.keyboard.open`）。点区用 `composerHit(box, props, point)` → `'input'` \| `'send'` \| `null`，几何与 `composerParts(box, props)` 同源；`sendWidth` 在窄容器里最多占一半，输入框不会被挤成 0 宽 |
 
 > **输入框要自己接键盘**：`.ui` 里 `put input` 只是画一个框。点它 → 游戏侧
 > `platform.keyboard?.open({ defaultValue, maxLength, rect: 布局里的矩形 })`；
@@ -459,6 +551,7 @@ const bound = bindComponents(parsed.spec, { registry, env: { viewport, data } })
 | `carousel` | `pages` + `renderItem` | `readonly unknown[]`；`(ctx, page, rect, index) => void` |
 | `grid` | `items` + `renderItem` | `readonly unknown[]`；`(ctx, item, rect, index) => void`（格内矩形，已扣除滚动） |
 | `scroll` | `renderContent` | `(ctx, box, scrollTop) => void`；`box` 是**内容坐标系**（未平移）的容器矩形 |
+| `chatList` | `items` | `readonly ChatMessage[]`：`{ id, who, text, at, name?, avatar?, state? }`。`who` 是**任意字符串**（不是 `'me' \| 'other'` 枚举），左右分流靠 style 的 `selfId`；缺失/非法项仍占一行高度并画「格式错误」虚线框，不静默跳过（跳过会让下面所有项往上跳一格，用户看到的是「消息错位」） |
 
 ### 数据组件的双通道注入（最容易踩的坑，必读）
 
@@ -479,8 +572,8 @@ const bound = bindComponents(parsed.spec, { registry, env: { viewport, data } })
 > const resolved = resolveUiData(view.data, baseDeps.data ?? view.data);
 > ```
 >
-> 历史佐证：两个游戏曾各自手写成 `resolveUiData(view.data, view.data)` 绕过了一次——
-> 同一个坑被独立踩过两遍，说明模板不改就会一直复制下去。
+> 历史佐证：两个互不相关的游戏各自手写成 `resolveUiData(view.data, view.data)`
+> 绕过了一次——同一个坑被独立踩过两遍，说明模板不改就会一直复制下去。
 
 若你坚持分两边喂，**两边都必须传**：
 
@@ -510,7 +603,7 @@ const bound = bindComponents(parsed.spec, { registry, env: { viewport, data } })
 ### `.ui` 用法示例
 
 ```txt
-# 通用组件：需要内容宽度的用 fixed（离线 check 不接注册表，auto 会报 0×0）
+# 通用组件：需要内容宽度的用 fixed（离线 check 默认只认内置 31 个组件，自写组件要传 registry，见下）
 region header top 12% row align center pad-x 5% gap 2%
 put avatar size fixed 48 cross 48 style shape=circle
 put label  size fill cross fixed 24 style text="标题" fontSize=18 align=left
@@ -519,6 +612,23 @@ region body fill column align stretch pad-x 6% gap 2%
 put progress size fixed 16 style value=64 max=100 showText=true
 put list     size fill style itemH=56 gap=8 virtual=true divider=true
 ```
+
+### 自写组件与离线工具（`registry` 参数）
+
+`ui.check` / `ui.layout` / `ui.preview` 默认只认内置那 31 个组件。工程里自己写了组件时，
+把注册表模块路径传进去，否则离线一律报「未知组件 xxx」，只能等 `mg build`（慢且拿不到 rects）：
+
+```jsonc
+{ "source": "...", "registry": "games/player-ui-lab/src/app/ui-registry.ts" }
+```
+
+- 路径**相对仓库根**（也可给绝对路径）；错误信息里打印解析后的绝对路径
+- 模块可以导出注册表**实例**，也可以导出**无参** `create*` 工厂
+  （`createRegistry` / `createDefaultUiRegistry` / `createPlayerRegistry` 这类命名都认）
+- 传了它就**只用它**：组件名校验、style 参数校验、`auto` 尺寸的 `measure` 全部换成它的组件 ——
+  所以 `cross auto` 会真的算出外部组件的高度
+- 认不出注册表（文件不存在 / import 失败 / 模块里没有注册表）→ 直接报错并列出该模块的全部导出名，
+  **不会静默回退到内置注册表**（回退会让人误以为已经验过）
 
 ---
 

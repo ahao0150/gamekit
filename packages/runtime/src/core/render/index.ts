@@ -165,7 +165,9 @@ export const createRender: CreateRender = (opts: { readonly ctx: Ctx2D; readonly
         ctx.strokeText(t, at.x, at.y);
       }
       ctx.fillStyle = s.color ?? '#000';
-      ctx.fillText(t, at.x, at.y);
+      // maxWidth > 0 才透传：0 / 负数会让 canvas 把文字压成不可见
+      if (s.maxWidth !== undefined && s.maxWidth > 0) ctx.fillText(t, at.x, at.y, s.maxWidth);
+      else ctx.fillText(t, at.x, at.y);
     },
 
     textLines(lines: readonly string[], at: Vec2, style?: TextStyle): void {
@@ -260,3 +262,7 @@ export const createRender: CreateRender = (opts: { readonly ctx: Ctx2D; readonly
 // T30：离屏层缓存（静态 UI 层「每帧重画 → 一次 drawImage」）
 export { createLayerCache, createLayerCacheFor } from './cache';
 export type { LayerCache, LayerCacheOptions } from './cache';
+
+// 文本折行与变高项高度预计算（聊天气泡这类「按文本变高」的内容靠它）
+export { measureItemHeights, wrapText } from './wrap';
+export type { ItemHeightOptions, MeasureFn } from './wrap';

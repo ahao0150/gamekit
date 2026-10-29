@@ -177,6 +177,45 @@ export function readSize(tokens: readonly Token[], at: number, what: string): Si
   return { ok: false, message: `${what} 只接受 fill / auto / fixed <n> / ratio <r> / <n>%，收到 '${word}'` };
 }
 
+/** `aspect` 的读取结果（v0.7）。 */
+export type AspectRead = { readonly ok: true; readonly aspect: number; readonly next: number }
+  | { readonly ok: false; readonly message: string };
+
+/**
+ * 读 `aspect` 的宽高比（v0.7）：`<r>` 或 `<w>:<h>`，统一折成 **`w / h`**。
+ *
+ * `1` 正方形、`16:9` 横宽、`9:16` 竖长。**保留四位小数**（规范 §4.2）：
+ * `16:9` → `1.7778`。这样 rect 的两位小数是确定的，不会因为 `1.7777777…`
+ * 在乘法里的尾差让断言来回抖。
+ */
+export function readAspect(tokens: readonly Token[], at: number, what: string): AspectRead {
+  const token = tokens[at];
+  if (token === undefined) {
+    return { ok: false, message: `${what} 的 aspect 缺少比值（可用：<r> 如 1，或 <w>:<h> 如 16:9）` };
+  }
+  const word = token.text;
+  const colon = word.indexOf(':');
+  if (colon >= 0) {
+    const w = Number(word.slice(0, colon));
+    const h = Number(word.slice(colon + 1));
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
+      return {
+        ok: false,
+        message: `${what} 的 aspect '${word}' 不是合法宽高比：<w>:<h> 的两个数都必须大于 0（如 16:9）`,
+      };
+    }
+    return { ok: true, aspect: Math.round((w / h) * 10000) / 10000, next: at + 1 };
+  }
+  const value = Number(word);
+  if (!Number.isFinite(value) || value <= 0) {
+    return {
+      ok: false,
+      message: `${what} 的 aspect 必须是大于 0 的比值（w/h，如 1 / 1.5 / 16:9），收到 '${word}'`,
+    };
+  }
+  return { ok: true, aspect: Math.round(value * 10000) / 10000, next: at + 1 };
+}
+
 /** 读一个非负数字（gap / pad / region 高度共用）。 */
 export function readNumber(tokens: readonly Token[], at: number, what: string): { readonly ok: true; readonly value: number; readonly next: number } | { readonly ok: false; readonly message: string } {
   const token = tokens[at];

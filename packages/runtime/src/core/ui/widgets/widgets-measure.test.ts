@@ -65,7 +65,7 @@ describe('measure：默认尺寸与 props 覆盖', () => {
 });
 
 describe('注册表', () => {
-  it('createWidgetRegistry 装好 22 个组件，顺序与 WIDGET_COMPONENTS 一致', () => {
+  it('createWidgetRegistry 装好 25 个组件，顺序与 WIDGET_COMPONENTS 一致', () => {
     const registry = createWidgetRegistry();
     expect(registry.names()).toEqual([
       'progress',
@@ -90,6 +90,9 @@ describe('注册表', () => {
       'carousel',
       'grid',
       'scroll',
+      'chatBubble',
+      'chatList',
+      'chatComposer',
     ]);
     expect(WIDGET_COMPONENTS.map((comp) => comp.name)).toEqual(registry.names());
   });

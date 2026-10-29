@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "src/**/*.ts",
+    "../../packages/vite-plugin/src/virtual.d.ts",
+    "../../packages/runtime/src/debug/env.d.ts"
+  ]
+}

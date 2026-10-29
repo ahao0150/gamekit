@@ -56,6 +56,14 @@ const NUMERIC_LITERAL = /^\s*-?\d+(?:\.\d+)?\s*$/;
 const BOUNDARY_CONSTS = new Set([0, 1]);
 /** 显式豁免：「这个值确实是固定的物理量」 */
 const FIXED_LAYOUT_EXEMPT = '@fixed-layout';
+/**
+ * 显式豁免：「这处动态 import 是 Node 侧工具行为，不进小游戏包」。
+ *
+ * 规则 3 的初衷是「小游戏不支持代码分割」，而 `packages/debug-mcp` 这类只跑在 Node 里的
+ * 开发工具本来就不打包（如按参数加载用户工程的 registry 模块，只能动态 import）。
+ * 与 `@fixed-layout` 同一思路：让「破例」需要写字解释，而不是默默放过。
+ */
+const DYNAMIC_IMPORT_EXEMPT = '@allow-dynamic-import';
 
 /**
  * 取 `(` 之后的顶层参数列表（自己数括号深度，`[^)]*` 遇到嵌套会截断）。
@@ -222,7 +230,7 @@ const warnings = [];
 
 // ---------- 规则 6：每个游戏必须有展示名（浏览器标签 / 分享卡片用） ----------
 // 不设 title 时，`build/web/index.html` 的 <title> 会退化成英文目录名。
-// 这个坑踩过两次：kuaidi-load 与 pindou-workshop 都是上线后才发现标签是英文 id。
+// 这个坑踩过两次：两款上线游戏 都是上线后才发现标签是英文 id。
 const PLACEHOLDER_TITLE = '（改成本游戏的中文名）';
 /** 外部探针产物：`.gitignore` 已排除、不进库，不是团队作品，不参与规则 6 */
 const SKIP_GAME_DIRS = new Set(['color-pop', 'flip-pairs']);
@@ -272,7 +280,11 @@ for (const file of files) {
     if (isCommentLine(line)) return;
     const at = `${rel}:${index + 1}`;
     if (ANY_PATTERN.test(line)) violations.push(`${at} 使用了 any（改用 unknown + 收窄）`);
-    if (DYNAMIC_IMPORT_PATTERN.test(line)) violations.push(`${at} 动态 import()（小游戏不支持）`);
+    if (DYNAMIC_IMPORT_PATTERN.test(line) && !line.includes(DYNAMIC_IMPORT_EXEMPT)) {
+      violations.push(
+        `${at} 动态 import()（小游戏不支持）。Node 侧工具确需动态加载时，行尾加 // ${DYNAMIC_IMPORT_EXEMPT} <原因>`,
+      );
+    }
     if (!isPlatformImpl && PLATFORM_PATTERN.test(line)) {
       violations.push(`${at} 平台黑名单命中（只允许出现在 platform/ 下）`);
     }

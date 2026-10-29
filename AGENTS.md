@@ -5,7 +5,7 @@
 >
 > 当前栈：**Vite 8（Rolldown 内核）+ TypeScript strict + pnpm workspace**，
 > 产物：**web / 微信小游戏 / 抖音小游戏** 三端。
-> 方案与里程碑见 [docs/PLAN-v2.md](docs/PLAN-v2.md)；v1 归档原文见 [ARCHIVED.md](ARCHIVED.md)（仅历史记录，不是当前约束）。
+> v1 归档原文见 [ARCHIVED.md](ARCHIVED.md)（仅历史记录，不是当前约束）。
 
 # gamekit 开发规范（给 AI 与 Bot 读）
 
@@ -32,7 +32,7 @@
 | 你要做的事 | 放这里 |
 |---|---|
 | 新增一个平台实现 | `packages/runtime/src/platform/<平台名>/index.ts` |
-| 改平台契约 | `packages/runtime/src/platform/contract.ts`（**改前必须问 维护者**） |
+| 改平台契约 | `packages/runtime/src/platform/contract.ts`（**改前必须问 Chief**） |
 | 加一个 core 能力 | `packages/runtime/src/core/<能力名>/`，含 `index.ts` + `contract.ts` + `*.test.ts` |
 | 改构建行为 | `packages/vite-plugin/src/` |
 | 加 CLI 命令 | `packages/cli/src/commands/<命令名>.ts` |
@@ -76,8 +76,8 @@
 
 契约（`**/contract.ts`）是冻结的。要改必须：
 
-1. 写一段「为什么要改、影响谁」，贴给 维护者；
-2. 等 维护者 同意；
+1. 写一段「为什么要改、影响谁」，贴给 Chief；
+2. 等 Chief 同意；
 3. 同一次提交里改契约 + 改所有实现 + 补测试。**禁止只改契约留实现报错。**
 
 ## 5. 提交前自检
@@ -147,18 +147,6 @@ which is planned to become the default in a future major version of Vite: ...
 
 **等 Vite 真把 native 设为默认时（那是 major 版本）再接**：届时要么按官方迁移工具成批补
 扩展名，要么继续用 `--configLoader bundle` 顶住（CLI 已支持该参数）。
-
-### 6.2 开源版专属：缺 `games/kuaidi-load` 时测试会「假红」
-
-本仓库（GitHub 开源版）**不带**《快递装车员》，但有两个测试文件在**模块顶层**静态引用它，
-`pnpm -w test` 会报 `2 failed / 1270 passed` —— **断言一条没失败**，只是文件加载时
-`ENOENT` / `Cannot find module`。已按目录存在性处理：
-
-- `vitest.config.ts`：缺该目录时把两个文件并入 `exclude`（拼在 `configDefaults.exclude` 之后，别覆盖默认值）
-- `tsconfig.json`：静态排除 `packages/runtime/src/core/ui/layout.kuaidi.test.ts`（tsc 不看 vitest 的 exclude）
-
-**完整版仓库（自带该游戏）要把 `tsconfig.json` 里那行删掉**，让类型检查恢复；
-`vitest.config.ts` 是条件判断，两边都不用改。
 
 ## 7. 禁止事项
 

@@ -1,3 +1,4 @@
+// @long-file 五个离线工具共用「解析 → 绑定 measure → 布局」一条链；加 registry 加载后，拆开会让「这次到底用了哪份注册表」散落到多处，正是本文件要防的错
 /**
  * 五个离线 UI 工具的实现：`ui.check / ui.layout / ui.preview / ui.grammar / ui.pattern`。
  *
@@ -9,7 +10,11 @@
  * 文档里的 `mg.ui.check` 是同一个工具，调用时两种写法都接受。
  */
 
+import { existsSync } from 'node:fs';
+import { isAbsolute, normalize, resolve as resolvePath } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { bindComponents } from '../../runtime/src/core/ui/bind';
+import type { ComponentRegistry } from '../../runtime/src/core/ui/components';
 import { createDefaultUiRegistry } from '../../runtime/src/core/ui/default-registry';
 import { describeGrammar } from '../../runtime/src/core/ui/grammar';
 import type { UiGrammar } from '../../runtime/src/core/ui/grammar';
@@ -28,18 +33,133 @@ export const UI_TOOL_NAMES = ['ui.check', 'ui.layout', 'ui.preview', 'ui.grammar
 
 const DEFAULT_VIEWPORT: LayoutViewport = { width: 390, height: 844 };
 
-/** 与 vite / 模板同一份完整注册表（31 个组件），离线 check 才能校验组件名并跑 measure。 */
+/**
+ * 与 vite / 模板同一份完整注册表（31 个组件）。
+ *
+ * **只有没传 `registry` 参数时才用它**；传了外部注册表就完全不碰它 ——
+ * 更不会「外部解析失败就回退到这份」，那会让人以为验过了（见 `resolveRegistry`）。
+ */
 const defaultRegistry = createDefaultUiRegistry();
-const parseOptsFromRegistry = () => ({
-  knownComponents: defaultRegistry.names(),
-  componentProps: defaultRegistry.propKeys(),
+
+/** 解析器选项从**实际要用的**注册表取，否则外部组件在解析期就被判「未知组件」。 */
+const parseOptsFromRegistry = (registry: ComponentRegistry) => ({
+  knownComponents: registry.names(),
+  componentProps: registry.propKeys(),
 });
+
+/** 仓库根：本文件在 `packages/debug-mcp/src/`，上溯三层（src → debug-mcp → packages → 仓库根）。 */
+const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 
 const ok = (text: string): ToolResult => ({ text });
 const fail = (text: string): ToolResult => ({ text, isError: true });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+// ---------------------------------------------------------------------------
+// 外部注册表（`registry` 参数）
+//
+// 为什么需要：`ui.check` 曾写死内置注册表，任何游戏自写的组件（如 player-ui-lab 的 9 个）
+// 离线一律报「未知组件」，只能等 `mg build` 才报 —— 那不是 `.ui` 写错，是工具缺参数。
+//
+// 三条硬约束：
+// 1. 不传 `registry` = 与改动前逐字节一致（仍用内置那份）；
+// 2. 传了就**只认外部那份**，`knownComponents` / `componentProps` / `bindComponents`
+//    三处全部换成它，`auto` 尺寸才会真的走外部组件的 `measure`；
+// 3. 任何失败都抛错，**绝不静默回退内置注册表** —— 回退会让人以为验过了，
+//    比直接报错危险得多。
+// ---------------------------------------------------------------------------
+
+/** 注册表形状：`ComponentRegistry` 的六个方法一个都不能少。 */
+const isRegistryLike = (value: unknown): value is ComponentRegistry =>
+  isRecord(value)
+  && typeof value['register'] === 'function'
+  && typeof value['get'] === 'function'
+  && typeof value['has'] === 'function'
+  && typeof value['names'] === 'function'
+  && typeof value['propKeys'] === 'function'
+  && typeof value['propDecls'] === 'function';
+
+/**
+ * 模块里的注册表候选：值是注册表实例，或名字以 `create` 开头、**无参调用**后返回注册表。
+ *
+ * 认不出（0 个）与认不清（多个）都交给 `pickRegistry` 报错，不猜。
+ */
+const registryCandidates = (
+  mod: Record<string, unknown>,
+): { readonly name: string; readonly registry: ComponentRegistry }[] => {
+  const found: { name: string; registry: ComponentRegistry }[] = [];
+  for (const [name, exported] of Object.entries(mod)) {
+    if (isRegistryLike(exported)) {
+      found.push({ name, registry: exported });
+      continue;
+    }
+    if (typeof exported === 'function' && /^create/i.test(name)) {
+      try {
+        const made: unknown = (exported as () => unknown)();
+        if (isRegistryLike(made)) found.push({ name: `${name}()`, registry: made });
+      } catch {
+        // 需要参数的工厂不是这里要的：跳过。真没有候选时会把该模块全部导出名列出来。
+      }
+    }
+  }
+  return found;
+};
+
+/** 出现多个候选时的优先命名；都不匹配就报错，绝不随便挑一个。 */
+const PREFERRED_FACTORY_NAMES = ['createRegistry', 'createDefaultUiRegistry', 'createDemoRegistry'];
+
+const pickRegistry = (mod: Record<string, unknown>, absPath: string): ComponentRegistry => {
+  const candidates = registryCandidates(mod);
+  const only = candidates[0];
+  if (only !== undefined && candidates.length === 1) return only.registry;
+
+  const exportsText = Object.keys(mod).join(' / ') || '（该模块没有任何导出）';
+  if (candidates.length === 0) {
+    throw new Error(
+      `registry 模块里找不到注册表：${absPath}\n`
+      + `该模块导出：${exportsText}\n`
+      + '需要导出 ComponentRegistry 实例，或导出**无参** create* 工厂（如 createRegistry / createDefaultUiRegistry）',
+    );
+  }
+  for (const preferred of PREFERRED_FACTORY_NAMES) {
+    const hit = candidates.find((item) => item.name === `${preferred}()` || item.name === preferred);
+    if (hit !== undefined) return hit.registry;
+  }
+  throw new Error(
+    `registry 模块里有多个注册表候选，无法确定用哪个：${candidates.map((item) => item.name).join(' / ')}（${absPath}）\n`
+    + `改为只导出一个，或用 ${PREFERRED_FACTORY_NAMES.join(' / ')} 命名`,
+  );
+};
+
+/** `registry` 参数 → 外部注册表。相对路径按仓库根解析；所有失败都抛中文错并带绝对路径。 */
+const importExternalRegistry = async (raw: string): Promise<ComponentRegistry> => {
+  const trimmed = raw.trim();
+  const absPath = isAbsolute(trimmed) ? normalize(trimmed) : resolvePath(REPO_ROOT, trimmed);
+  if (!existsSync(absPath)) {
+    throw new Error(`registry 路径不存在：${absPath}\n（收到 '${raw}'；相对路径按仓库根解析：${REPO_ROOT}）`);
+  }
+  let mod: Record<string, unknown>;
+  try {
+    // registry 参数指向用户工程里的模块，路径到运行期才知道，只能动态 import。
+    mod = (await import(pathToFileURL(absPath).href)) as Record<string, unknown>; // @allow-dynamic-import 本包只跑在 Node（MCP 工具），不进小游戏包
+  } catch (error) {
+    throw new Error(
+      `registry 模块 import 失败：${absPath}\n原因：${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  return pickRegistry(mod, absPath);
+};
+
+/** 不传 → 内置注册表（行为与改动前一致）；传了 → 只认外部那份，失败即抛错。 */
+const resolveRegistry = async (params: Record<string, unknown>): Promise<ComponentRegistry> => {
+  const raw = params['registry'];
+  if (raw === undefined) return defaultRegistry;
+  if (typeof raw !== 'string' || raw.trim().length === 0) {
+    throw new Error(`registry 必须是非空字符串（相对仓库根的路径或绝对路径），收到 ${JSON.stringify(raw)}`);
+  }
+  return importExternalRegistry(raw);
+};
 
 const VIEWPORT_TEXT = /^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)$/;
 
@@ -84,18 +204,23 @@ const resolveViewports = (params: Record<string, unknown>): LayoutViewport[] => 
   return [single === undefined ? DEFAULT_VIEWPORT : toViewport(single, 'viewport')];
 };
 
-const parseSource = (params: Record<string, unknown>): ParsedUi => {
+const parseSource = (params: Record<string, unknown>, registry: ComponentRegistry): ParsedUi => {
   const source = params['source'];
   if (typeof source !== 'string' || source.trim().length === 0) {
     throw new Error('source 必须是非空的 .ui 源码字符串（不是文件路径）');
   }
   const fileName = typeof params['fileName'] === 'string' && params['fileName'].length > 0 ? params['fileName'] : 'ui.ui';
-  return parse(source, { fileName, ...parseOptsFromRegistry() });
+  return parse(source, { fileName, ...parseOptsFromRegistry(registry) });
 };
 
 /** 解析成功后绑定 measure，再交给 layout（与运行时 bindComponents 同口径）。 */
-const bindAndLayout = (parsed: ParsedUi, viewport: LayoutViewport): { boundErrors: readonly string[]; result: LayoutResult } => {
-  const bound = bindComponents(parsed.spec, { registry: defaultRegistry, env: { viewport, data: {} } });
+const bindAndLayout = (
+  parsed: ParsedUi,
+  viewport: LayoutViewport,
+  registry: ComponentRegistry,
+): { boundErrors: readonly string[]; result: LayoutResult } => {
+  // 用外部注册表时，`auto` 尺寸真的走这些组件的 measure，不是只放行组件名
+  const bound = bindComponents(parsed.spec, { registry, env: { viewport, data: {} } });
   return { boundErrors: bound.errors, result: layout(bound.spec, viewport) };
 };
 
@@ -104,20 +229,20 @@ const bindAndLayout = (parsed: ParsedUi, viewport: LayoutViewport): { boundError
 const issuesOf = (parsed: ParsedUi, result: LayoutResult, viewport: LayoutViewport): string[] =>
   collectIssues(parsed, result, viewport).map((issue) => issue.message);
 
-const runCheck = (params: Record<string, unknown>): ToolResult => {
-  const parsed = parseSource(params);
+const runCheck = (params: Record<string, unknown>, registry: ComponentRegistry): ToolResult => {
+  const parsed = parseSource(params, registry);
   if (parsed.errors.length > 0) {
     return ok(JSON.stringify({ ok: false, errors: parsed.errors, rects: {} }, null, 2));
   }
   const viewports = resolveViewports(params);
   if (viewports.length === 1) {
     const viewport = viewports[0] ?? DEFAULT_VIEWPORT;
-    const { boundErrors, result } = bindAndLayout(parsed, viewport);
+    const { boundErrors, result } = bindAndLayout(parsed, viewport, registry);
     const errors = [...boundErrors, ...issuesOf(parsed, result, viewport)];
     return ok(JSON.stringify({ ok: errors.length === 0, errors, rects: result.rects }, null, 2));
   }
   const results = viewports.map((viewport) => {
-    const { boundErrors, result } = bindAndLayout(parsed, viewport);
+    const { boundErrors, result } = bindAndLayout(parsed, viewport, registry);
     const errors = [...boundErrors, ...issuesOf(parsed, result, viewport)].map(
       (error) => `[${viewportText(viewport)}] ${error}`,
     );
@@ -127,13 +252,13 @@ const runCheck = (params: Record<string, unknown>): ToolResult => {
   return ok(JSON.stringify({ ok: errors.length === 0, errors, results }, null, 2));
 };
 
-const runLayout = (params: Record<string, unknown>): ToolResult => {
-  const parsed = parseSource(params);
+const runLayout = (params: Record<string, unknown>, registry: ComponentRegistry): ToolResult => {
+  const parsed = parseSource(params, registry);
   if (parsed.errors.length > 0) {
     return ok(JSON.stringify({ ok: false, errors: parsed.errors, regions: {}, rects: {} }, null, 2));
   }
   const viewport = toViewport(params['viewport'] ?? DEFAULT_VIEWPORT, 'viewport');
-  const { boundErrors, result } = bindAndLayout(parsed, viewport);
+  const { boundErrors, result } = bindAndLayout(parsed, viewport, registry);
   const errors = [...boundErrors, ...result.errors];
   return ok(
     JSON.stringify(
@@ -152,13 +277,13 @@ const runLayout = (params: Record<string, unknown>): ToolResult => {
   );
 };
 
-const runPreview = (params: Record<string, unknown>): ToolResult => {
-  const parsed = parseSource(params);
+const runPreview = (params: Record<string, unknown>, registry: ComponentRegistry): ToolResult => {
+  const parsed = parseSource(params, registry);
   if (parsed.errors.length > 0) {
     return ok(`✗ 解析失败，无法布局（${parsed.errors.length} 条）：\n${parsed.errors.map((error) => `✗ ${error}`).join('\n')}`);
   }
   const blocks = resolveViewports(params).map((viewport) => {
-    const { boundErrors, result } = bindAndLayout(parsed, viewport);
+    const { boundErrors, result } = bindAndLayout(parsed, viewport, registry);
     // preview 用宽松口径：任一维为 0 也标 ⚠；绑定错误追加进 issues 文案
     const issues = collectIssues(parsed, result, viewport, { anyZeroDimension: true });
     const boundIssues = boundErrors.map((message) => ({
@@ -188,6 +313,7 @@ const grammarText = (): string => {
     `层（v0.5 分段行）：${grammar.layers.join(' / ')}（overlay 独立整屏坐标系，恒在 base 之上；不写默认 base）`,
     `hit 取值：${grammar.put.hits.join(' / ')}（默认 self；block 吃掉点击无动作，none 穿透）`,
     `尺寸写法：${grammar.put.sizes.join(' / ')}`,
+    `aspect 写法：${grammar.put.aspects.join(' / ')}（w/h 比值，保留四位小数；必须且只能有一个已知轴）`,
     `长度写法：${grammar.lengths.join(' / ')}`,
     `style 值类型：${grammar.put.styleValues.join(' / ')}`,
     '',
@@ -225,11 +351,11 @@ export const createUiTools = (): UiTools => {
     try {
       switch (canonical(name)) {
         case 'ui.check':
-          return runCheck(params);
+          return runCheck(params, await resolveRegistry(params));
         case 'ui.layout':
-          return runLayout(params);
+          return runLayout(params, await resolveRegistry(params));
         case 'ui.preview':
-          return runPreview(params);
+          return runPreview(params, await resolveRegistry(params));
         case 'ui.grammar':
           return ok(grammarText());
         case 'ui.pattern':

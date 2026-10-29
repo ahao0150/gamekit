@@ -34,7 +34,7 @@ pnpm mg -- create my-game --template iaa-simple
 ```
 
 `--template` 就是 `templates/` 下的目录名，新增模板不用改 CLI。**iaa-ui**（默认）界面写在
-`ui/home.ui`、组件走注册表（**31 个现成件 = 9 个内置业务件 + 22 个通用组件**）、命中用 `pickHit`，开箱 **暖木纹** 皮肤（另有清爽玻璃，见模板 `docs/SKINS.md`）；
+`ui/home.ui`、组件走注册表（**34 个现成件 = 9 个内置业务件 + 25 个通用组件**）、命中用 `pickHit`，开箱 **暖木纹** 皮肤（另有清爽玻璃，见模板 `docs/SKINS.md`）；
 **iaa-simple** 是手写 `computeLayout`，没有 `vite.config.ts` / `ui-registry.ts` / `ui/` ——
 选它还想用 `.ui` 就得照本文 §3–§6 手工补一遍。
 
@@ -59,7 +59,7 @@ pnpm mg -- create my-game --template iaa-simple
 ## 3. 组件注册表：**iaa-ui 已自带（不用动）；iaa-simple 没有，必须自建**
 
 **用 iaa-ui 模板的话这一节可以直接跳过** —— 它的 `src/app/ui-registry.ts` 已经写好，而且已经
-遍历注册了 `WIDGET_COMPONENTS`（`createRegistry()` 出来是 **31 个组件**：9 个内置业务件 + 22 个通用件）。
+遍历注册了 `WIDGET_COMPONENTS`（`createRegistry()` 出来是 **34 个组件**：9 个内置业务件 + 25 个通用件）。
 `vite.config.ts` 与运行时 `bindComponents` 都从这一个工厂取，不用你操心。
 
 只有 `iaa-simple`（或想从零搭）才需要新建 `src/app/ui-registry.ts`：
@@ -81,7 +81,8 @@ export const createRegistry = (): ComponentRegistry => {
 `pause` / `parcelGrid` / `infoPanel` / `card0` / `card1`。
 要用通用组件（`progress` / `panel` / `label` / `button` / `input` / `list` / `grid` / `scroll` /
 `slider` / `tabs` / `segmented` / `keypad` / `carousel` / `scrollbar` / `toast` / `switch` /
-`checkbox` / `radio` / `divider` / `badge` / `icon` / `avatar` 共 **22 个**，其中 `input` / `grid` /
+`checkbox` / `radio` / `divider` / `badge` / `icon` / `avatar` / `chatBubble` / `chatList` /
+`chatComposer` 共 **25 个**，其中 `input` / `grid` /
 `scroll` 是 T31/T34 新增的），**必须像上面那样遍历注册 `WIDGET_COMPONENTS`**，否则构建直接失败：
 
 ```
@@ -343,13 +344,13 @@ node ../../packages/cli/bin/mg.mjs build --all
 ## 12. 实测会卡住的 9 个坑
 
 1. **`.ui` 必须自己挂 `uiPlugin`**：不挂报 `[PARSE_ERROR] Invalid Character`，看着像语法写错。
-2. **`createBuiltinRegistry()` 只有 9 个业务件**：iaa-ui 的 `ui-registry.ts` **已经遍历注册好 31 个**，
+2. **`createBuiltinRegistry()` 只有 9 个业务件**：iaa-ui 的 `ui-registry.ts` **已经遍历注册好 34 个**，
    别重复改；iaa-simple / 从零搭的才需要自己补 `WIDGET_COMPONENTS`（§3）。
 3. **模板没有 `src/env.d.ts`**：缺了 `tsc` 报 TS2307，而 `mg build` 照样绿。
 4. **`import` 了 `.ui` 但没喂给 `layout()`**：会被 tree-shake，**产物大小一点不变、也不报错** ——
    看起来「接好了」其实界面完全没生效。判据是「构建期注册表校验有没有真的跑到 `.ui`」。
 5. **`mg` 不是全局命令**：仓库根用 `pnpm mg -- <命令>` 或 `node packages/cli/bin/mg.mjs <命令>`；游戏目录内可用模板 scripts（`pnpm dev`）。
-6. **`size auto` 需要注册表**：离线 `ui.check` 已接与构建相同的默认注册表（31 个组件）；若仍 0×0，检查是否漏注册自定义组件。
+6. **`size auto` 需要注册表**：离线 `ui.check` 已接与构建相同的默认注册表（34 个组件）；若仍 0×0，检查是否漏注册自定义组件。
 7. **别照抄 ui-demo 的 `vite.config.ts`**：它为端到端验收关掉了 `watch` / `hmr`（改代码要重启 dev server
    才生效）。日常开发用 §5 的最小配置。
 8. **`mg build` 会先 typecheck，并检查每个 `ui/*.ui` 都被 import**：漏接的 `.ui` 会在构建结束时报错；

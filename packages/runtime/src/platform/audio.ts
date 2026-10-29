@@ -4,7 +4,7 @@
  * 为什么单独这个文件：
  * 契约（platform/contract.ts）里的 `AudioHandle` 是冻结的，里面有 `pause()`
  * 但**没有** `resume()`。而「BGM 暂停后从原处继续」（而不是从头重播）需要
- * `resume()`。改契约要先确认，所以这里用一个扩展类型把这项能力显式化：
+ * `resume()`。改契约要问 Chief，所以这里用一个扩展类型把这项能力显式化：
  *
  *   - 三端底层对象本来就有这两个方法（HTMLAudioElement / InnerAudioContext），
  *     接上即可；

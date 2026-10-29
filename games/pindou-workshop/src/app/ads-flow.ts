@@ -1,5 +1,5 @@
 /**
- * 广告网关：把平台的 `platform.ads` 接到 runtime 的 `core/ads`（照 kuaidi-load 的做法）。
+ * 广告网关：把平台的 `platform.ads` 接到 runtime 的 `core/ads`（沿用同一套接法）。
  *
  * 业务只认识 `canRewarded` / `showRewarded()` / `showInterstitial()`；
  * 「能不能用」由 `platform.can('ad-*')` 回答一次（按钮禁用态），

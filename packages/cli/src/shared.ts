@@ -103,8 +103,8 @@ export interface GameConfig {
   /**
    * 页面标题（中文名）。不给就退回 `package.json` 的 `name`。
    *
-   * 为什么要这个字段：包名必须是 kebab-case 英文 id（`kuaidi-load`），
-   * 但浏览器标签页和分享卡片要显示中文名（`快递装车员`）。没有这个字段时
+   * 为什么要这个字段：包名必须是 kebab-case 英文 id（如 `my-game`），
+   * 但浏览器标签页和分享卡片要显示中文名（`我的游戏`）。没有这个字段时
    * title 只能取包名，线上标签页显示的是英文 id。
    */
   readonly title?: string;

@@ -1,7 +1,6 @@
 /**
  * UI 布局核心的原语语义测试（region / stack / size / align / 溢出）。
  *
- * 真实游戏布局的对照在 `layout.kuaidi.test.ts`（拆开是为了守 300 行上限）。
  */
 
 import { describe, expect, it } from 'vitest';

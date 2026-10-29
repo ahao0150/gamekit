@@ -24,7 +24,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../../..');
 const outDir = join(repoRoot, 'out', 'debug');
 
-const PUPPETEER_PROJECT = 'C:\\Users\\Administrator\\.dsh\\bot\\workspace\\projects\\tanqiu-fengbao\\package.json';
+// 需要 puppeteer：设 PUPPETEER_PROJECT 指向含 puppeteer 依赖的 package.json（createRequire 用它定位）
+const PUPPETEER_PROJECT = process.env.PUPPETEER_PROJECT;
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const arg = (name, dflt) => {
   const at = process.argv.indexOf(`--${name}`);

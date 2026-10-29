@@ -90,6 +90,28 @@ describe('参数透传（mock ctx 记录）', () => {
     expect(ys).toEqual([100, 120, 140]);
   });
 
+  it('TextStyle.maxWidth 真的透传给 fillText 第四参（不传则只有三个参数）', () => {
+    const { ctx, calls } = makeCtx();
+    const r = createRender({ ctx });
+
+    // 不传 maxWidth：fillText 只有三参（现有调用方的行为不变）
+    r.text('宽', { x: 1, y: 2 });
+    expect(last(calls, 'fillText')).toEqual(['宽', 1, 2]);
+
+    // 传了：第四参原样带上 —— 折行算窄了的时候靠它横向压缩兜住
+    r.text('宽', { x: 1, y: 2 }, { size: 16, maxWidth: 88 });
+    expect(last(calls, 'fillText')).toEqual(['宽', 1, 2, 88]);
+  });
+
+  it('textLines 同样透传 maxWidth（内部走 text，逐行都带上）', () => {
+    const { ctx, calls } = makeCtx();
+    const r = createRender({ ctx });
+    r.textLines(['a', 'b'], { x: 0, y: 0 }, { lineHeight: 20, maxWidth: 50 });
+    const fills = calls.filter((c) => c.m === 'fillText');
+    expect(fills).toHaveLength(2);
+    for (const call of fills) expect(call.a[3]).toBe(50);
+  });
+
   it('image 透传目标矩形（整图拉伸）', () => {
     const { ctx, calls } = makeCtx();
     const r = createRender({ ctx });

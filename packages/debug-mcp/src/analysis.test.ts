@@ -51,7 +51,7 @@ const fill = (z: number, rect: Rect, color: string): SnapshotDraw => ({ z, kind:
 const callsOf = (): SnapshotDraw[] => [
   fill(0, { x: 0, y: 0, w: 390, h: 844 }, '#132a32'),
   image(1, { x: 19.5, y: 76, w: 351, h: 109.7 }, 'panel-info.png'),
-  text(2, 195, 40, '快递装车员'),
+  text(2, 195, 40, '示例标题'),
   text(3, 195, 110, '选择 → 旋转 → 点格子装箱'),
   image(4, { x: 50, y: 211, w: 145, h: 135 }, 'grid-cell.png'),
   image(5, { x: 195, y: 211, w: 145, h: 135 }, 'grid-cell.png'),

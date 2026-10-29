@@ -4,7 +4,7 @@
  * 为什么落盘而不是只在内存：回归对比要拿「昨天/另一个进程存的基线」做 diff。
  * 文件放在 `out/mcp-snapshots/<name>.json`，格式带 `version`，字段只增不改。
  *
- * 布局树来自游戏侧 `attach({ layout })`，形状因游戏而异（kuaidi 是 Rect 字段 +
+ * 布局树来自游戏侧 `attach({ layout })`，形状因游戏而异（有的游戏是 Rect 字段 +
  * cards 数组，ui-demo 是扁平 Rect）。这里做**归一化**：递归成 `path → Rect`，
  * 数组元素用 `cards[0]` 这种路径。非矩形字段（如 cell 数字）直接跳过。
  */

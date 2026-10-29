@@ -48,8 +48,8 @@ it('分数变化反映到 progress.value（动态 props）', () => {
   expect(view.props['statusText']).toMatchObject({ label: '+1 分（当前 4）' });
 });
 
-it('注册表共 31 个组件（内置 9 + 通用 22）', () => {
-  expect(engine.registry.names().length).toBe(31);
+it('注册表共 34 个组件（内置 9 + 通用 25）', () => {
+  expect(engine.registry.names().length).toBe(34);
   for (const name of ['button', 'panel', 'label', 'progress', 'statusText', 'grid', 'scroll', 'input']) {
     expect(engine.registry.has(name), `缺组件 ${name}`).toBe(true);
   }

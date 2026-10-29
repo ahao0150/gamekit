@@ -7,6 +7,22 @@
 
 import type { ToolSpec } from './contract';
 
+/**
+ * `ui.check` / `ui.layout` / `ui.preview` 共用的 `registry` 参数说明。
+ *
+ * 存在意义：默认注册表只含内置 31 个组件，工程自写组件（如 player-ui-lab 的 9 个）离线必报
+ * 「未知组件」，只能等 `mg build`。传这个参数就把解析 / 参数校验 / `auto` 尺寸的 measure
+ * 全部换成该模块的注册表。
+ */
+const REGISTRY_PARAM = {
+  type: 'string',
+  description:
+    '组件注册表模块路径（相对仓库根或绝对路径），如 "games/player-ui-lab/src/app/ui-registry.ts"。'
+    + '不传 = 内置 31 个组件；工程自写了组件时必须传，否则离线报「未知组件」。'
+    + '模块导出注册表实例或无参 create* 工厂（createRegistry / createDefaultUiRegistry …）都认；'
+    + '认不出（文件不存在 / import 失败 / 没有注册表）直接报错并列出该模块导出名，不回退内置。',
+};
+
 export const UI_TOOL_SPECS: readonly ToolSpec[] = [
   {
     name: 'ui.check',
@@ -21,6 +37,7 @@ export const UI_TOOL_SPECS: readonly ToolSpec[] = [
         viewport: { type: 'string', description: '视口，如 "390x844"；也可传 {width,height}' },
         viewports: { type: 'array', description: '多视口数组，如 ["390x844","320x568"]', items: { type: 'string' } },
         fileName: { type: 'string', description: '错误前缀用的文件名，默认 ui.ui' },
+        registry: REGISTRY_PARAM,
       },
       required: ['source'],
     },
@@ -36,6 +53,7 @@ export const UI_TOOL_SPECS: readonly ToolSpec[] = [
         source: { type: 'string', description: '.ui 源码全文' },
         viewport: { type: 'string', description: '视口，如 "390x844"；默认 390×844' },
         fileName: { type: 'string', description: '错误前缀用的文件名，默认 ui.ui' },
+        registry: REGISTRY_PARAM,
       },
       required: ['source'],
     },
@@ -55,6 +73,7 @@ export const UI_TOOL_SPECS: readonly ToolSpec[] = [
         viewport: { type: 'string', description: '视口，如 "390x844"；默认 390×844' },
         viewports: { type: 'array', description: '多视口数组', items: { type: 'string' } },
         fileName: { type: 'string', description: '错误前缀用的文件名，默认 ui.ui' },
+        registry: REGISTRY_PARAM,
       },
       required: ['source'],
     },

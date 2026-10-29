@@ -4,7 +4,7 @@
  * 配置里没有任何游戏分支；代码只认下面这套通用字段：
  *
  *   {
- *     "slug": "arrow-pop",
+ *     "slug": "pindou-workshop",
  *     "screenPath": "state.screen",        // 期望/日志读的屏幕字段（默认 state.screen）
  *     "start": "primaryButton",            // 开始按钮的 layout key（--start 可覆盖）
  *     "maxSteps": 8,                       // 步骤上限，超过直接报配置错误
