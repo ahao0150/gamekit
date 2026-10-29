@@ -52,7 +52,7 @@
 
 | 命令 | 作用 | 默认 | 退出码 |
 |---|---|---|---|
-| `mg create <name> [--template iaa-simple]` | 复制 `templates/<tpl>` 到 `games/<name>`，改 `package.json` 的 `name` | 模板 `iaa-simple` | 0 成功 / 1 失败 |
+| `mg create <name> [--template iaa-ui] [--dir <目录>]` | 复制模板到指定目录；不传--dir时为games/<name>；外部项目自动链接框架 | 模板 `iaa-ui` | 0 成功 / 1 失败 |
 | `mg dev [--target web\|wx\|tt] [--port <n>] [--host <addr>] [--strict-port]` | web 起 dev server；wx/tt 走 `build --watch` | `web`；host `127.0.0.1` | 0 / 1 |
 | `mg build [--target ...] [--all]` | 三端产物 | `web`（`--all` 出三端） | 0 / 1 |
 | `mg check [--target ...] [--all] [--out-dir <dir>]` | 包体红线、`game.json` 与产物目录一致、清单与产物一致 | 检查已存在的全部产物 | 0 通过 / 1 有不通过项 |
@@ -124,3 +124,5 @@ games/<name>/
 - 待提交槽：`mg.save.data.pending`
 
 多存档 / 多账号用 `namespace` 区分（如 `mg.save.slot2.`），不要在一个游戏里手拼 key。
+
+框架外项目是正式支持的工作流，位置与依赖说明见[EXTERNAL-PROJECTS.md](EXTERNAL-PROJECTS.md)。doctor通过gamekit.config.json定位外部游戏关联的框架。

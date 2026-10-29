@@ -21,7 +21,7 @@ export const USAGE = [
   '用法：mg <命令> [选项]',
   '',
   '命令：',
-  '  create <name> [--template <名>]               从模板创建 games/<name>/（默认 iaa-ui）',
+  '  create <name> [--template <名>]               从模板创建项目（--dir指定位置，默认iaa-ui）',
   '  dev [--target web|wx|tt] [--port <n>] [--host <addr>]',
   '                                                开发：web 起 dev server，wx/tt 构建监听',
   '  build [--target web|wx|tt] [--all]            构建产物到 build/<target>/（先 typecheck）',
@@ -50,9 +50,11 @@ const COMMON = [
  */
 export const COMMAND_HELP: Readonly<Record<string, string>> = {
   create: [
-    '用法：mg create <name> [--template <名>]',
+    '用法：mg create <name> [--template <名>] [--dir <目标目录>]',
     '',
-    '把 templates/<名>/ 复制到 games/<name>/（必须在 gamekit 仓库内），并替换 package.json name。',
+    '默认创建games/<name>；--dir可在框架外创建独立项目，自动链接本地框架。',
+    '  --dir <目录>    最终项目目录（相对当前调用目录；不会覆盖已有目录）',
+    '  --root <目录>   选择框架仓库；从框架外带--dir调用时默认使用CLI所属框架',
     '  --template <名>  模板目录名，默认 iaa-ui；templates/ 下的目录都能用',
     '                   （iaa-ui = .ui 界面链，推荐；iaa-simple = 手写布局链）',
     COMMON,

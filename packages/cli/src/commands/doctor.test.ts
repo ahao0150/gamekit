@@ -91,3 +91,13 @@ it('从框架子目录执行doctor仍是仓库体检，不误判成游戏', asyn
   expect(out).toContain(`mg doctor: 仓库根 ${root}`);
   expect(out.some(line => line.startsWith('mg doctor: 游戏项目'))).toBe(false);
 });
+
+it('独立游戏自己的workspace不会被误认作框架', async () => {
+  const framework = makeRoot(), game = makeRoot(), out: string[] = [];
+  writeFileSync(join(game, 'pnpm-workspace.yaml'), "packages: ['.']");
+  writeFileSync(join(game, 'gamekit.config.json'), JSON.stringify({ frameworkRoot: framework }));
+  writeFileSync(join(game, 'game.config.json'), JSON.stringify({ design: { width: 390, height: 844 } }));
+  await runDoctor([], { cwd: game, stdout: line => out.push(line), stderr: () => undefined });
+  expect(out).toContain(`mg doctor: 仓库根 ${framework}`);
+  expect(out).toContain(`mg doctor: 游戏项目 ${game}`);
+});

@@ -1,18 +1,5 @@
-import { existsSync } from 'node:fs';
 import { configDefaults, defineConfig } from 'vitest/config';
 import { uiPlugin } from './packages/ui-plugin/src/index';
-
-/**
- *
- * 但有两个测试文件在**模块顶层**就静态引用了它的 `ui/home.ui` 与 `src/app/layout`，
- * 目录不存在时整个文件加载即崩（`ENOENT` / `Cannot find module`），`pnpm -w test` 直接红，
- * 而断言本身一条都没失败 —— 这种红会被误读成「代码坏了」。
- *
- * 按目录存在性决定是否排除：完整版照跑这两个测试，开源版自动跳过。
- */
-
-  '**/packages/debug-mcp/src/ui-tools.test.ts',
-];
 
 export default defineConfig({
   // `.ui` 模板（templates/iaa-ui）的测试会 import 界面模块，根测试必须也能编译 `.ui`；

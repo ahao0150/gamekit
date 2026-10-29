@@ -38,13 +38,21 @@
 | `packages/physics-2d` | `@mg/physics-2d`：planck 薄封装（可选） |
 | `packages/debug-mcp` | 调试 MCP server：离线 5 个 `ui.*` 工具 + 运行时 10 个工具，WebSocket 端口 7788 |
 | `packages/cli` | `mg` 命令：create / dev / build / check / pack / doctor |
-| `templates/iaa-ui` | **默认模板**：`.ui` 界面链 + 31 组件注册表 |
+| `templates/iaa-ui` | **默认模板**：`.ui` 界面链 + 通用组件注册表 |
 | `templates/iaa-simple` | 手写布局 demo：广告三件套 + 主菜单 + 存档 + 最小玩法 |
 
-## 游戏必须放哪
+## 游戏目录与维护方式
 
-**所有游戏工程只能在 `gamekit/games/<name>/`。** `mg create` 会拒绝仓库外路径；
-相对路径依赖、workspace 协议、三端构建都假定游戏在这个目录下。
+框架只在本开源仓库维护；游戏可以放在任意独立目录，推荐与框架分开：
+
+```powershell
+pnpm mg -- create my-game --dir 'D:\games\my-game'
+```
+
+CLI自动链接本地框架并重定位构建/测试配置。进入游戏目录执行`pnpm install`，之后使用
+`pnpm dev/test/build/check`。未传--dir时继续兼容`games/<name>`。详见[独立项目指南](docs/EXTERNAL-PROJECTS.md)。
+
+聊天气泡、聊天列表、聊天输入条已包含在通用组件中，无需维护私有引擎副本。
 
 ## 快速开始
 
@@ -52,7 +60,7 @@
 pnpm install            # 仓库根装一次（workspace 覆盖 packages/ / templates/ / games/）
 pnpm -w typecheck
 pnpm -w test
-pnpm doctor             # 人话体检：Node ≥ 22、pnpm、契约文件等
+pnpm run doctor         # 人话体检：Node ≥ 22、pnpm、契约文件等
 
 # 建新游戏（默认模板 iaa-ui；必须在仓库根）
 pnpm mg -- create my-game

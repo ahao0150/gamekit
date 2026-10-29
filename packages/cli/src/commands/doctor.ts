@@ -7,7 +7,7 @@ import { existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { join, relative, resolve, sep } from 'node:path';
 import { parseArgs, stringFlag } from '../args';
-import { findWorkspaceRoot, readGameConfig } from '../shared';
+import { findFrameworkRoot, readGameConfig } from '../shared';
 import type { CliContext, CommandRunner } from '../shared';
 
 /** 与根 package.json engines.node 对齐。 */
@@ -144,7 +144,7 @@ export const exitCodeOf = (checks: readonly DoctorCheck[]): number =>
 export const runDoctor: CommandRunner = async (argv, ctx) => {
   const parsed = parseArgs(argv);
   const project = resolve(ctx.cwd, stringFlag(parsed, 'root') ?? '.');
-  const root = findWorkspaceRoot(project);
+  const root = findFrameworkRoot(project);
   ctx.stdout(`mg doctor: 仓库根 ${root}`);
 
   const checks = collectChecks(root);

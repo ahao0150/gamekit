@@ -186,3 +186,7 @@ which is planned to become the default in a future major version of Vite: ...
 1. 改了什么（文件路径）
 2. 怎么验证的（测试名 / 数字）
 3. 有没有偏离契约（有/无，有就说明）
+
+## 独立游戏与唯一框架源
+
+共享框架只维护本开源仓库；私有游戏使用外部独立目录，不再维护私有引擎副本。`mg create <name> --dir <目录>`自动建立本地框架链接和项目配置。旧games目录继续兼容，但不能要求新游戏必须放入仓库。先读docs/EXTERNAL-PROJECTS.md；不自动移动已有游戏，不提交业务或私有素材。

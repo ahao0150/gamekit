@@ -19,7 +19,7 @@ import { startMcpServer } from './mcp';
 import { PATTERN_NAMES } from './ui-patterns';
 import { UI_TOOL_NAMES, createUiTools } from './ui-tools';
 
-const HOME_UI = readFileSync(new URL('../../../games/pindou-workshop/ui/home.ui', import.meta.url), 'utf8');
+const HOME_UI = readFileSync(new URL('./__fixtures__/home.ui', import.meta.url), 'utf8');
 
 /** 6 行、恰好 5 条错误：重复 region / 非法边 / 缺高度 / 非法 size / style 缺等号。 */
 const BAD_UI = [
@@ -46,7 +46,7 @@ describe('ui.check：解析 + 布局 + 全部断言', () => {
     expect(payload.rects).toEqual({});
   });
 
-  it('真实 home.ui 在 390×844 通过，返回矩形表', async () => {
+  it('内置组件夹具home.ui 在 390×844 通过，返回矩形表', async () => {
     const payload = JSON.parse(
       await callText('ui.check', { source: HOME_UI, viewport: '390x844', fileName: 'home.ui' }),
     ) as { ok: boolean; errors: string[]; rects: Record<string, { w: number; h: number }> };
@@ -95,12 +95,12 @@ describe('ui.layout：纯 JSON 矩形表', () => {
 });
 
 describe('ui.preview：ASCII 可视化', () => {
-  it('真实 home.ui 两个视口：上下两段，元素带实际宽高', async () => {
+  it('内置组件夹具home.ui 两个视口：上下两段，元素带实际宽高', async () => {
     const text = await callText('ui.preview', { source: HOME_UI, viewports: ['390x844', '320x568'] });
     expect(text).toContain('┌─ 390×844');
     expect(text).toContain('┌─ 320×568');
     expect(text).toContain('footerBand');
-    expect(text).toContain('[primaryButton 167.6×63.3');
+    expect(text).toContain('[primaryButton 171.6×63.3');
     expect(text).toContain('└');
   });
 
@@ -124,7 +124,7 @@ describe('ui.preview：问题就地高亮 + 汇总行', () => {
     expect(text).toMatch(/未知组件 'parcel'/);
   });
 
-  it('真实 home.ui：接上注册表后 parcelGrid 有真实高度（不再 0 高）', async () => {
+  it('内置组件夹具home.ui：接上注册表后 parcelGrid 有真实高度（不再 0 高）', async () => {
     const text = await callText('ui.preview', { source: HOME_UI, viewport: '390x844' });
     expect(text).toContain('共 8 块');
     expect(text).toMatch(/\[parcelGrid [^\]]+×[^0][^\]]* auto\]/);
@@ -270,14 +270,14 @@ describe('registry 参数：接外部注册表', () => {
       await callText('ui.check', { source: HOME_UI, viewport: '390x844', fileName: 'home.ui' }),
     ) as { ok: boolean; rects: Record<string, unknown> };
     expect(payload.ok).toBe(true);
-    // 期望值取自本次改动**之前**的实现实际输出，一个数都不许动
+    // 夹具的约束布局有固定期望值，避免依赖业务游戏的自定义组件或变动
     expect(payload.rects).toEqual({
       infoPanel: { x: 19.5, y: 75.96, w: 351, h: 109.72 },
       parcelGrid: { x: 31.2, y: 211, w: 327.6, h: 218.4 },
-      primaryButton: { x: 19.5, y: 683.64, w: 167.6, h: 63.3 },
-      secondaryButton: { x: 202.7, y: 683.64, w: 167.6, h: 63.3 },
-      card0: { x: 19.5, y: 514.84, w: 167.6, h: 67.52 },
-      card1: { x: 194.9, y: 514.84, w: 167.6, h: 67.52 },
+      primaryButton: { x: 19.5, y: 683.64, w: 171.6, h: 63.3 },
+      secondaryButton: { x: 198.9, y: 683.64, w: 171.6, h: 63.3 },
+      card0: { x: 19.5, y: 514.84, w: 171.6, h: 67.52 },
+      card1: { x: 198.9, y: 514.84, w: 171.6, h: 67.52 },
     });
   });
 

@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { CliContext } from '../shared';
 import { DEFAULT_TEMPLATE, assertGamekitRoot, runCreate, validateGameName } from './create';
@@ -193,4 +194,66 @@ it('create的相对--root遵循调用上下文，不依赖进程cwd', async () =
   const { ctx, err } = context(root);
   expect(await runCreate(['context-game', '--root', '.'], ctx), err.join('\n')).toBe(0);
   expect(existsSync(join(root, 'games', 'context-game', 'src', 'main.ts'))).toBe(true);
+});
+
+describe('框架外项目', () => {
+  const externalTemplate = (root: string): void => {
+    const template = makeTemplate(root);
+    for (const name of ['runtime', 'cli']) {
+      mkdirSync(join(root, 'packages', name), { recursive: true });
+      writeFileSync(join(root, 'packages', name, 'package.json'), JSON.stringify({ name: '@mg/' + name }));
+    }
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ devDependencies: { vite: '8.3.4', vitest: '5.0.5', typescript: '7.0.2' } }));
+    writeFileSync(join(template, 'package.json'), JSON.stringify({ name: 'template', scripts: { build: 'mg build --all' }, dependencies: { '@mg/runtime': 'workspace:*' }, devDependencies: { '@mg/cli': 'workspace:*' } }));
+    writeFileSync(join(template, 'tsconfig.json'), JSON.stringify({ extends: '../../tsconfig.base.json' }));
+    writeFileSync(join(template, 'vite.config.ts'), "import { uiPlugin } from '../../packages/ui-plugin/src/index'; export default {plugins:[uiPlugin()]};");
+  };
+  it('--dir支持带空格的外部路径，链接依赖和类型配置，不复制引擎', async () => {
+    const root = makeWorkspace(), parent = makeRootOutside(), game = join(parent, '独立 game');
+    externalTemplate(root);
+    writeFileSync(join(root, 'pnpm-lock.yaml'), 'original-lock');
+    const { ctx, out, err } = context(root);
+    expect(await runCreate(['outside-game', '--root', root, '--dir', game], ctx), err.join('\n')).toBe(0);
+    const pkg = JSON.parse(readFileSync(join(game, 'package.json'), 'utf8'));
+    expect(pkg.name).toBe('outside-game');
+    expect(pkg.dependencies['@mg/runtime']).toMatch(/^link:/);
+    expect(pkg.devDependencies['@mg/cli']).toMatch(/^link:/);
+    expect(pkg.devDependencies.vitest).toBe('5.0.5');
+    expect(readFileSync(join(game, 'tsconfig.json'), 'utf8')).not.toContain('../../tsconfig.base.json');
+    expect(JSON.parse(readFileSync(join(game, 'gamekit.config.json'), 'utf8')).frameworkRoot).toBeTruthy();
+    expect(existsSync(join(game, 'pnpm-workspace.yaml'))).toBe(true);
+    expect(existsSync(join(game, 'packages'))).toBe(false);
+    expect(out.join('\n')).toContain('pnpm install');
+    expect(existsSync(join(root, 'games', 'outside-game'))).toBe(false);
+    expect(readFileSync(join(root, 'pnpm-lock.yaml'), 'utf8')).toBe('original-lock');
+  });
+  it('相对--dir基于调用目录；显式--root只选择框架', async () => {
+    const root = makeWorkspace(), outside = makeRootOutside();externalTemplate(root);
+    const { ctx, err } = context(outside);
+    expect(await runCreate(['demo', '--root', root, '--dir', './child'], ctx), err.join('\n')).toBe(0);
+    expect(existsSync(join(outside, 'child', 'game.config.json'))).toBe(false);
+    expect(existsSync(join(outside, 'child', 'src', 'main.ts'))).toBe(true);
+  });
+  it('缺值--dir被拒绝；已有目录及文件不覆盖', async () => {
+    const root = makeWorkspace(), outside = makeRootOutside();externalTemplate(root);
+    expect(await runCreate(['demo', '--dir'], context(root).ctx)).toBe(1);
+    writeFileSync(join(outside, 'keep.txt'), 'keep');
+    expect(await runCreate(['demo', '--dir', outside], context(root).ctx)).toBe(1);
+    expect(readFileSync(join(outside, 'keep.txt'), 'utf8')).toBe('keep');
+  });
+});
+
+function makeRootOutside(): string {
+  const root = mkdtempSync(join(tmpdir(), 'mg-independent-'));
+  made.push(root); return root;
+}
+
+it('显式--dir可从非工作区调用，并使用CLI所属框架', async () => {
+  const outside = makeWorkspace();
+  makeTemplate(outside); // 模拟另一套看起来合法的框架工作区
+  const { ctx, err } = context(outside);
+  expect(await runCreate(['cli-owned', '--dir', './new-project'], ctx), err.join('\n')).toBe(0);
+  const config = JSON.parse(readFileSync(join(outside, 'new-project', 'gamekit.config.json'), 'utf8'));
+  expect(resolve(outside, 'new-project', config.frameworkRoot)).toBe(resolve(fileURLToPath(new URL('../../../../', import.meta.url))));
+  expect(existsSync(join(outside, 'new-project', 'ui', 'home.ui'))).toBe(true);
 });

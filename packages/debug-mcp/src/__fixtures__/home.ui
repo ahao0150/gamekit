@@ -1,0 +1,16 @@
+# 离线工具契约夹具，仅依赖框架内置组件，不依赖任何游戏工程。
+layer base
+region header top 9%
+region info top 13% column pad-x 5%
+put infoPanel size fill
+region beforeBoard top 3%
+region board top 32% column pad-x 8%
+put parcelGrid size auto cross 100%
+region beforeCards top 4%
+region cards top 8% row pad-x 5% gap 2%
+put card0 size fill
+put card1 size fill
+region safe bottom 11.5%
+region footerBand bottom 7.5% row pad-x 5% gap 2%
+put primaryButton size fill
+put secondaryButton size fill

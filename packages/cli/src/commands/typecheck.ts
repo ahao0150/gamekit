@@ -6,7 +6,7 @@
 import { existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
-import { findWorkspaceRoot } from '../shared';
+import { findFrameworkRoot } from '../shared';
 import type { CliContext } from '../shared';
 
 export interface TypecheckResult {
@@ -19,7 +19,7 @@ export interface TypecheckResult {
  * 解析本仓库的 tsc 入口；找不到返回 null（调用方决定跳过还是报错）。
  */
 export const resolveTsc = (projectRoot: string): string | null => {
-  const workspace = findWorkspaceRoot(projectRoot);
+  const workspace = findFrameworkRoot(projectRoot);
   const candidates = [
     join(projectRoot, 'node_modules', 'typescript', 'bin', 'tsc'),
     join(workspace, 'node_modules', 'typescript', 'bin', 'tsc'),

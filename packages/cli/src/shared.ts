@@ -57,6 +57,15 @@ export const readJson = (path: string): unknown => {
   }
 };
 
+/** 外部游戏通过本地配置指向唯一框架；仓库内项目仍自动向上定位。 */
+export const findFrameworkRoot = (project: string): string => {
+  const config = readJson(join(project, 'gamekit.config.json'));
+  if (isRecord(config) && typeof config['frameworkRoot'] === 'string' && config['frameworkRoot'].trim() !== '') {
+    return resolve(project, config['frameworkRoot']);
+  }
+  return findWorkspaceRoot(project);
+};
+
 /**
  * 游戏项目根（含 src/ 与 assets/）。
  * 与「仓库根」区分：build/dev/check/pack 都作用于游戏项目，默认就是 cwd；

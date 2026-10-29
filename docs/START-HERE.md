@@ -1,8 +1,8 @@
 # START HERE：从零做一款游戏（gamekit v2）
 
 > 目标：照着抄就能从零跑出「界面 → 三端产物」的闭环。
-> **游戏必须建在 `gamekit/games/<name>/`**（`mg create` 拒绝仓库外路径）。
-> **所有命令都在仓库根执行**（有 `pnpm-workspace.yaml` 的那层）。
+> **游戏支持框架外独立目录**：`pnpm mg -- create my-game --dir <目标目录>`；旧的 `games/<name>` 继续兼容。
+> 创建命令可在框架根执行；开发、测试、构建和检查在游戏目录执行。
 > 仓库根可用：`pnpm mg -- <命令>`（= `node packages/cli/bin/mg.mjs <命令>`）。
 > **要做一款完整的游戏（不只是跑通）**：先读 [`GAME-WORKFLOW.md`](GAME-WORKFLOW.md)（PRD、美术清单、手感、验收截图、包体）。
 > **写代码前的策划**：先读 [`GAME-PLANNER.md`](GAME-PLANNER.md)（默认轻量 Concept→Top→PRD/ART-BRIEF；完整模式才跑 Architecture/Systems）。空模板在 [`templates/game-planner/`](templates/game-planner/)。
@@ -26,8 +26,8 @@
 
 ```bash
 # 默认就是 iaa-ui（.ui 界面链：vite.config / ui-registry / env.d.ts / layout / render 都已接好）
-pnpm mg -- create my-game
-# 等价：node packages/cli/bin/mg.mjs create my-game
+pnpm mg -- create my-game --dir 'D:\games\my-game'
+# 不传--dir仍创建games/my-game；等价CLI入口：node packages/cli/bin/mg.mjs create my-game
 
 # 极简单屏 demo：手写布局老链（也算 verify-platform 门禁的样本）
 pnpm mg -- create my-game --template iaa-simple
@@ -353,3 +353,5 @@ node ../../packages/cli/bin/mg.mjs build --all
 
 仓库环境检查用 `pnpm run doctor`（`pnpm doctor` 可能调用 pnpm 自带命令）；
 具体游戏检查用 `pnpm mg -- doctor --root games/<name>`。构建通过不等于宿主验收通过。
+
+外部项目的依赖、跨盘路径与迁移说明见[EXTERNAL-PROJECTS.md](EXTERNAL-PROJECTS.md)。共享框架以后只维护本开源仓库，私有游戏独立管理。

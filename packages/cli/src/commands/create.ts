@@ -2,11 +2,13 @@
  * `mg create <name> [--template iaa-ui]`
  *
  * 把 `templates/<template>/` 复制到 `games/<name>/`，并把 package.json 的
- * name 换成项目名。游戏必须落在 gamekit 仓库的 `games/*` 下。
+ * name 换成项目名。默认games/<name>，--dir可指定独立项目目录。
  */
 
 import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { prepareExternalProject } from '../external-project';
 import { parseArgs, stringFlag } from '../args';
 import { findWorkspaceRoot, isRecord, messageOf, readJson } from '../shared';
 import type { CommandRunner } from '../shared';
@@ -81,21 +83,10 @@ const copyTemplate = (from: string, to: string): void => {
 /** 必须是带 pnpm-workspace / templates / packages 的 gamekit 仓库根。 */
 export const assertGamekitRoot = (root: string): string | null => {
   if (!existsSync(join(root, 'pnpm-workspace.yaml'))) {
-    return '找不到 gamekit 仓库根（需要 pnpm-workspace.yaml）。请在仓库内执行；游戏只能建在 gamekit/games/<name>/';
+    return '找不到 gamekit 仓库根（需要 pnpm-workspace.yaml）。请指定--root <框架根>，或在框架内执行';
   }
   if (!isDirectory(join(root, 'templates')) || !isDirectory(join(root, 'packages'))) {
-    return '当前目录不像 gamekit 仓库（缺少 templates/ 或 packages/）。游戏必须创建在 gamekit/games/* 下';
-  }
-  return null;
-};
-
-/** 目标必须落在 `<root>/games/<name>`，拒绝仓库外路径。 */
-export const assertInsideGames = (root: string, gameDir: string): string | null => {
-  const gamesRoot = resolve(root, 'games');
-  const resolved = resolve(gameDir);
-  const prefix = gamesRoot.endsWith(sep) ? gamesRoot : `${gamesRoot}${sep}`;
-  if (resolved !== gamesRoot && !resolved.startsWith(prefix)) {
-    return `拒绝仓库外路径：只能创建在 ${gamesRoot}${sep}<name> 下`;
+    return '当前目录不像 gamekit 仓库（缺少 templates/ 或 packages/）。请确认--root指向框架目录';
   }
   return null;
 };
@@ -120,7 +111,16 @@ export const runCreate: CommandRunner = async (argv, ctx) => {
     return 1;
   }
 
-  const root = findWorkspaceRoot(resolve(ctx.cwd, stringFlag(parsed, 'root') ?? '.'));
+  const dir = stringFlag(parsed, 'dir');
+  if (parsed.flags['dir'] !== undefined && (dir === undefined || dir.trim() === '')) {
+    ctx.stderr('mg create: --dir需要一个目标项目目录');
+    return 1;
+  }
+  let root = findWorkspaceRoot(resolve(ctx.cwd, stringFlag(parsed, 'root') ?? '.'));
+  // 显式--dir固定使用当前CLI所属框架，避免被调用目录中的另一套工作区劫持；--root可覆盖。
+  if (dir !== undefined && stringFlag(parsed, 'root') === undefined) {
+    root = fileURLToPath(new URL('../../../../', import.meta.url));
+  }
   const rootIssue = assertGamekitRoot(root);
   if (rootIssue !== null) {
     ctx.stderr(`mg create: ${rootIssue}`);
@@ -128,19 +128,17 @@ export const runCreate: CommandRunner = async (argv, ctx) => {
   }
 
   const templateDir = join(root, 'templates', template);
-  const gameDir = join(root, 'games', name);
-  const outside = assertInsideGames(root, gameDir);
-  if (outside !== null) {
-    ctx.stderr(`mg create: ${outside}`);
-    return 1;
-  }
+  const gameDir = dir === undefined ? join(root, 'games', name) : resolve(ctx.cwd, dir);
+  const games = resolve(root, 'games');
+  const external = relative(games, dirname(gameDir)) !== '';
+  const display = external ? gameDir : `games/${relative(games, gameDir).split(sep).join('/')}`;
 
   if (!isDirectory(templateDir)) {
     ctx.stderr(`mg create: 模板不存在：templates/${template}（可用：${listTemplates(root).join(' / ') || '无'}）`);
     return 1;
   }
   if (existsSync(gameDir)) {
-    ctx.stderr(`mg create: 目标已存在：games/${name}`);
+    ctx.stderr(`mg create: 目标已存在：${display}`);
     return 1;
   }
 
@@ -152,13 +150,23 @@ export const runCreate: CommandRunner = async (argv, ctx) => {
   }
 
   const renamed = replacePackageName(gameDir, name);
-  ctx.stdout(`✔ 已创建 games/${name}/（模板 ${template}）`);
+  if (external) {
+    try { prepareExternalProject(gameDir, root); }
+    catch (error) { ctx.stderr(`mg create: 独立项目配置失败：${messageOf(error)}。已复制文件保留在${gameDir}`); return 1; }
+  }
+  ctx.stdout(`✔ 已创建 ${display}/（模板 ${template}）`);
   if (!renamed) ctx.stdout('  ⚠ 模板里没有可解析的 package.json，未替换项目名');
   if (existsSync(join(gameDir, 'AGENTS.md'))) {
-    ctx.stdout(`  先读：games/${name}/AGENTS.md（给 AI 的工程约定：该读哪份文档、目录约定、禁止事项）`);
+    ctx.stdout(`  先读：${display}/AGENTS.md（给 AI 的工程约定：该读哪份文档、目录约定、禁止事项）`);
+  }
+  if (dir !== undefined) {
+    ctx.stdout(external
+      ? '  独立项目已链接本地框架；进入该目录执行pnpm install，然后pnpm dev / pnpm test / pnpm build / pnpm check'
+      : '  在框架根执行pnpm install，再进入上述目录执行pnpm dev / pnpm test / pnpm build / pnpm check');
+    return 0;
   }
   ctx.stdout('  下一步（任选其一，命令可直接复制）：');
-  ctx.stdout(`    cd games/${name} && node ../../packages/cli/bin/mg.mjs dev`);
-  ctx.stdout(`    pnpm mg -- dev --root games/${name}`);
+  ctx.stdout(`    cd ${display} && node ../../packages/cli/bin/mg.mjs dev`);
+  ctx.stdout(`    pnpm mg -- dev --root ${display}`);
   return 0;
 };

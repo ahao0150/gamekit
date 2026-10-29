@@ -1,6 +1,6 @@
 ---
 name: gamekit-minigame
-description: 用 gamekit 框架从零创建并开发一款三端小游戏（web / 微信小游戏 / 抖音小游戏）。当要在 gamekit 仓库里新建游戏、加玩法、接界面、出三端产物或做验收时使用。给出 mg create 流程、七个核心文件的职责、构建与门禁命令、六条实测踩坑判据。只改 .ui 界面布局时用 ui-authoring skill；改引擎（packages/**）不属于本 skill，先读仓库 AGENTS.md。
+description: 用 gamekit 框架从零创建并开发一款三端小游戏（web / 微信小游戏 / 抖音小游戏）。当要使用 gamekit 新建独立或仓库内游戏、加玩法、接界面、出三端产物或做验收时使用。给出 mg create 流程、七个核心文件的职责、构建与门禁命令、六条实测踩坑判据。只改 .ui 界面布局时用 ui-authoring skill；改引擎（packages/**）不属于本 skill，先读仓库 AGENTS.md。
 ---
 
 # 用 gamekit 做一款小游戏
@@ -24,7 +24,7 @@ description: 用 gamekit 框架从零创建并开发一款三端小游戏（web 
 ```bash
 git status            # 有未提交改动、或不在自己的分支 → 先问，别硬改
 pnpm install
-pnpm doctor           # Node ≥ 22 / pnpm / 依赖 / 契约文件 / 模板
+pnpm run doctor       # Node ≥ 22 / pnpm / 依赖 / 契约文件 / 模板
 ```
 
 `mg doctor` 不全绿就不要往下走，后面的错都会伪装成别的问题。
@@ -36,10 +36,10 @@ pnpm mg -- create my-game                        # 默认 iaa-ui 模板
 pnpm mg -- create my-game --template iaa-simple  # 极简单屏 demo（手写布局老链）
 ```
 
-- **iaa-ui**（默认）：`.ui` 链已接好 —— `vite.config.ts` / `src/app/ui-registry.ts` / `ui/*.ui` / `env.d.ts` 全都在，**34 个组件**（9 个内置业务件 + 25 个通用件）开箱可写。
+- **iaa-ui**（默认）：`.ui` 链已接好 —— `vite.config.ts` / `src/app/ui-registry.ts` / `ui/*.ui` / `env.d.ts` 全都在，通用组件（含聊天气泡、聊天列表和聊天输入条）开箱可写，名称以WIDGET_COMPONENTS为准。
 - **iaa-simple**：没有 `vite.config.ts` / `ui-registry.ts` / `ui/`，要 `.ui` 就得自己补一遍（照着 START-HERE §3–§6）。
 
-游戏必须建在 `games/<name>/`：`mg create` 会**拒绝仓库外路径**，三端构建与 workspace 协议都依赖这个前提。
+游戏可以在框架外创建，推荐`pnpm mg -- create my-game --dir <目标目录>`。CLI会链接本地框架并生成独立依赖与路径配置；进入游戏目录运行`pnpm install`和开发/测试/构建命令。旧games/<name>继续兼容。先读框架docs/EXTERNAL-PROJECTS.md，不手工复制引擎、不移动node_modules，不要求用户把私有游戏放入开源仓库。
 
 ## 2. 改 `game.config.json`（唯一真源）
 
