@@ -17,7 +17,7 @@ node ../../packages/cli/bin/mg.mjs build --all       # 三端产物到 build/
 node ../../node_modules/vitest/vitest.mjs run        # 本模板单测
 ```
 
-> `mg` 不是全局命令，仓库根的 `pnpm mg` 也不存在，一律 `node …/mg.mjs`。
+> 仓库根可用 `pnpm mg -- <命令>`；项目目录可用 `pnpm dev` / `pnpm build`。`mg` 不要求全局安装。
 
 ## 目录
 
@@ -29,7 +29,7 @@ templates/iaa-ui/
   src/main.ts          # 入口：resolvePlatform → createGame → start
   src/env.d.ts         # declare module '*.ui'（类型声明，缺了 tsc 会红）
   src/app/
-    ui-registry.ts     # 内置 9 个业务件 + 通用 25 个 = 34 个组件
+    ui-registry.ts     # 通用组件注册表（WIDGET_COMPONENTS）
     deps.ts            # runtime 依赖汇聚点（唯一直接 import runtime 的文件）
     layout.ts          # bindComponents → layout → rects / paintOrder / meta
     render.ts          # 按 paintOrder 正序画
@@ -54,7 +54,7 @@ put button    size fixed 56 style text="点我 +1"
 
 1. **`put` 的第一个词是组件名**，必须已在注册表里（拼错构建期直接报「未知组件」）；
 2. **一个界面里同名组件只能出现一次**（`rects` 以组件名为键）——要两个按钮就注册
-   两个名字，或用 `primaryButton` / `secondaryButton` 这类已有的不同名组件；
+   两个名字，并同步构建期与运行时注册表；默认模板不含旧业务按钮。
 3. **布局是约束不是坐标**：只有 `top/bottom/fill` 切分 + `size/cross/align/justify`，
    换屏型不用改任何数。
 
@@ -112,8 +112,10 @@ registry.register(
 | | iaa-simple | iaa-ui |
 |---|---|---|
 | 布局 | 手写 `computeLayout`（坐标用比例算） | `.ui` 描述（约束） |
-| 组件 | 自己画 | 注册表 + 34 个现成组件（9 内置业务件 + 25 通用件） |
+| 组件 | 自己画 | 通用注册表（与 WIDGET_COMPONENTS 同源） |
 | 命中 | 手写 `hitTest` | `pickHit`（层级 + block/self/none） |
 | 适用 | 单屏极简 demo | 有多个界面 / 浮层 / 列表的游戏 |
 
 `iaa-simple` 保留不动：`verify-platform` 门禁测的就是它的手写链。
+
+默认注册表仅含通用组件，提示文案由 `toast` 绘制。既有游戏使用的完整注册表继续保留。

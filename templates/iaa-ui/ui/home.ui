@@ -1,6 +1,6 @@
 # 主界面（可抄样板）：背景面板 + 标题 + 分数进度 + 一个按钮
 #
-# 语法真源：docs/ui-syntax.md（v0.5）。三条要点：
+# 语法真源：docs/ui-syntax.md（v0.6）。三条要点：
 # 1. `put` 的第一个词是**组件名**（必须已在注册表里，见 src/app/ui-registry.ts），
 #    不能自造名字；同一个组件名在一个界面里只能出现一次（rects 以组件名为键）。
 # 2. 布局是约束不是坐标：只有 region 切分（top / bottom / fill）+ 尺寸约束，
@@ -29,4 +29,4 @@ layer overlay
 # 标题压在顶部品牌带上（justify start + pad-y 把文字放进 26% 的带里）
 region titleLayer fill column justify start align center pad-y 4% gap 1%
 put label size fixed 34 style text="iaa-ui 模板" fontSize=20 align=center
-put statusText size fixed 24 style label="点按钮 +1 分" tone=light
+put toast size fixed 32 hit none style text="点按钮 +1 分" textSize=14

@@ -45,7 +45,7 @@
 
 ## 2. 推荐工作流
 
-工作目录：`games/<slug>/design/`（从 [`templates/game-planner`](templates/game-planner/) 拷入）。
+起草目录：仓库根 `artifacts/planning/<slug>/`；`mg create` 成功后移入 `games/<slug>/design/`。不要提前创建目标游戏目录，否则 CLI 会拒绝覆盖。模板从 [`templates/game-planner`](templates/game-planner/) 拷入。
 
 ```
 0  收集输入 → design/_brief.md（原始需求，只增不改）

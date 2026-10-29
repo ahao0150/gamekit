@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
 import { createLayoutEngine } from './layout';
+import { WIDGET_COMPONENTS } from './deps';
 import { INITIAL_STATE, SCORE_GOAL } from './state';
 
 const engine = createLayoutEngine();
@@ -45,12 +46,13 @@ it('分数变化反映到 progress.value（动态 props）', () => {
   const scored = { ...INITIAL_STATE, score: 4, hint: '+1 分（当前 4）' };
   const view = engine.compute('home', VIEWPORTS[0]!, scored);
   expect(view.props['progress']).toMatchObject({ value: 4, max: SCORE_GOAL });
-  expect(view.props['statusText']).toMatchObject({ label: '+1 分（当前 4）' });
+  expect(view.props['toast']).toMatchObject({ text: '+1 分（当前 4）' });
 });
 
-it('注册表共 34 个组件（内置 9 + 通用 25）', () => {
-  expect(engine.registry.names().length).toBe(34);
-  for (const name of ['button', 'panel', 'label', 'progress', 'statusText', 'grid', 'scroll', 'input']) {
+it('默认注册表与通用组件源一致，不混入旧业务件', () => {
+  expect([...engine.registry.names()].sort()).toEqual(WIDGET_COMPONENTS.map(component => component.name).sort());
+  expect(engine.registry.has('statusText')).toBe(false);
+  for (const name of ['button', 'panel', 'label', 'progress', 'toast', 'grid', 'scroll', 'input']) {
     expect(engine.registry.has(name), `缺组件 ${name}`).toBe(true);
   }
 });

@@ -98,11 +98,11 @@ export const loadArt = async (platform) => {
 // src/app/ui-options.ts —— 注意：全部走具体子模块，不 import '@mg/runtime' 总入口
 import { optionsFromRegistry } from '../../../../packages/ui-plugin/src/index';
 import type { CompileOptions } from '../../../../packages/ui-plugin/src/index';
-import { createDefaultUiRegistry } from '../../../../packages/runtime/src/core/ui/default-registry';
+import { createWidgetRegistry } from '../../../../packages/runtime/src/core/ui/widgets/index';
 import { CUSTOM_UI_SPEC } from './ui-spec';
 
 export const UI_COMPILE_OPTIONS: CompileOptions = (() => {
-  const base = optionsFromRegistry(createDefaultUiRegistry());
+  const base = optionsFromRegistry(createWidgetRegistry());
   const componentProps: Record<string, readonly string[]> = { ...base.componentProps };
   for (const [name, props] of Object.entries(CUSTOM_UI_SPEC)) componentProps[name] = Object.keys(props);
   return {

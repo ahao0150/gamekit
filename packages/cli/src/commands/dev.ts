@@ -105,6 +105,7 @@ export const runDev: CommandRunner = async (argv, ctx) => {
   try {
     if (target === 'web') {
       server = await createServer({
+        root,
         plugins: [plugin],
         logLevel: 'info',
         server: {
@@ -137,7 +138,7 @@ export const runDev: CommandRunner = async (argv, ctx) => {
       }
       ctx.stdout('mg dev: 保存即刷新；Ctrl+C 停止');
     } else {
-      await viteBuild({ plugins: [plugin], logLevel: 'info', build: { watch: {} } });
+      await viteBuild({ root, plugins: [plugin], logLevel: 'info', build: { watch: {} } });
       ctx.stdout(`mg dev: ${target} 构建监听中（没有 HMR，产物在 build/${target}/）`);
       if (hasPort) ctx.stdout('mg dev: --port 只对 web 端生效，wx/tt 走构建监听');
       if (hasHost) ctx.stdout('mg dev: --host 只对 web 端生效，wx/tt 走构建监听');

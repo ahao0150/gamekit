@@ -63,7 +63,7 @@ export const readJson = (path: string): unknown => {
  * 只有 create/doctor 需要仓库根（要去 templates/、packages/）。
  */
 export const projectRoot = (ctx: CliContext, parsed: ParsedArgs): string =>
-  resolve(stringFlag(parsed, 'root') ?? ctx.cwd);
+  resolve(ctx.cwd, stringFlag(parsed, 'root') ?? '.');
 
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);

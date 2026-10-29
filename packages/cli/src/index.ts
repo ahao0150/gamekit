@@ -30,7 +30,7 @@ export const USAGE = [
   '  pack [--write]                                美术资源压缩（骨架，流水线待接）',
   '  doctor                                        环境与仓库体检',
   '',
-  '通用：--root <dir> 指定仓库根（默认从 cwd 向上找 pnpm-workspace.yaml）',
+  '通用：--root <dir> 指定目标路径（相对调用目录）；build/dev/check/pack默认操作当前项目',
   '      -h, --help  显示帮助（`mg <命令> --help` 只看该命令）',
 ].join('\n');
 
@@ -38,7 +38,7 @@ export const USAGE = [
 const COMMON = [
   '',
   '通用选项：',
-  '  --root <dir>   指定仓库根（默认从 cwd 向上找 pnpm-workspace.yaml）',
+  '  --root <dir>   指定目标路径（相对调用目录）；create向上找工作区，其余命令操作项目',
   '  -h, --help     显示本命令帮助',
 ].join('\n');
 
@@ -90,7 +90,7 @@ export const COMMAND_HELP: Readonly<Record<string, string>> = {
     '  --write         真的写回压缩结果（不加只打印计划）',
     COMMON,
   ].join('\n'),
-  doctor: ['用法：mg doctor', '', '环境与仓库体检（error 决定退出码，warning 只提示）。', COMMON].join('\n'),
+  doctor: ['用法：mg doctor [--root <游戏路径>]', '', '默认检查仓库环境；指定游戏或在游戏目录运行时，再检查项目配置与三端入口。', 'error 决定退出码，warning只提示；宿主测试与mg check仍须分别执行。', COMMON].join('\n'),
 };
 
 /** 命令表：命令名 → 实现。未知命令由 main 报错。 */

@@ -58,7 +58,7 @@ export interface LayoutEngine {
 /** 动态 props：每帧可能在变的值（分数、提示文案）。静态文案留在 `.ui` 的 style 里。 */
 const dynamicProps = (state: GameState): Readonly<Record<string, StyleProps>> => ({
   progress: { value: state.score, max: SCORE_GOAL },
-  statusText: { label: state.hint },
+  toast: { text: state.hint },
 });
 
 /**

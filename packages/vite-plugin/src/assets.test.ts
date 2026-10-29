@@ -153,3 +153,28 @@ describe('清单', () => {
     expect(code).toContain('"ui/btn":["assets/ui/btn.webp"]');
   });
 });
+
+describe('资源完整性回归', () => {
+  it('JPG/JPEG 不再静默漏包，扩展名大小写不影响识别', () => {
+    write({ 'assets/art/arena.jpg': 30, 'assets/art/portrait.JPEG': 40 });
+    expect(buildManifest(pickAssets(options()).assets)).toEqual({
+      'art/arena': ['assets/art/arena.jpg'], 'art/portrait': ['assets/art/portrait.JPEG'],
+    });
+  });
+  it('JPEG 与 PNG/WebP 同名择优，pack 的 JPEG 可顶替原图', () => {
+    write({ 'assets/bg/a.png': 100, 'assets/bg/a.jpg': 80, 'assets-pack/bg/a.jpeg': 50 });
+    expect(pickAssets(options()).assets.map(a => a.rel)).toEqual(['bg/a.jpeg']);
+  });
+  it('明确拒绝未支持的媒体，错误包含文件与转换提示；说明文件仍允许', () => {
+    write({ 'assets/art/hero.svg': 20, 'assets/README.md': 20 });
+    expect(() => pickAssets(options())).toThrow(/hero\.svg.*PNG.*WebP/s);
+  });
+  it('pack 中的未支持媒体同样不能静默遗漏', () => {
+    write({ 'assets-pack/bg/a.avif': 20 });
+    expect(() => pickAssets(options())).toThrow(/a\.avif/);
+  });
+  it('同名图片与音频不再互相吞掉', () => {
+    write({ 'assets/shared/hit.png': 20, 'assets/shared/hit.wav': 30 });
+    expect(() => pickAssets(options())).toThrow(/shared\/hit.*冲突/s);
+  });
+});

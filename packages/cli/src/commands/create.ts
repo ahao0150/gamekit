@@ -120,7 +120,7 @@ export const runCreate: CommandRunner = async (argv, ctx) => {
     return 1;
   }
 
-  const root = findWorkspaceRoot(stringFlag(parsed, 'root') ?? ctx.cwd);
+  const root = findWorkspaceRoot(resolve(ctx.cwd, stringFlag(parsed, 'root') ?? '.'));
   const rootIssue = assertGamekitRoot(root);
   if (rootIssue !== null) {
     ctx.stderr(`mg create: ${rootIssue}`);
