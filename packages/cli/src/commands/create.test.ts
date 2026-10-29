@@ -186,3 +186,11 @@ describe('默认模板与仓库根校验', () => {
     expect(assertGamekitRoot(root)).toMatch(/templates/);
   });
 });
+
+it('create的相对--root遵循调用上下文，不依赖进程cwd', async () => {
+  const root = makeWorkspace();
+  makeTemplate(root);
+  const { ctx, err } = context(root);
+  expect(await runCreate(['context-game', '--root', '.'], ctx), err.join('\n')).toBe(0);
+  expect(existsSync(join(root, 'games', 'context-game', 'src', 'main.ts'))).toBe(true);
+});

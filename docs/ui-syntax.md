@@ -359,7 +359,7 @@ homeUi = {
 
 `rects` 以组件名为键，重名会互相覆盖。`ui.check` 能抓到并报错——**保持报错，不改成允许重名**。重名就是描述写错了，让人改比让引擎猜更有价值。
 
-如果确实需要两个同样的组件（比如并排两个按钮），用不同的 `style` 语义区分名字（`primaryButton` / `secondaryButton`），或者注册一个带索引的组件。
+如果确实需要两个同样的组件（比如并排两个按钮），注册两个不同名称的组件别名，并让编译期与运行时共享声明。仅修改 `style` 不会改变组件名。
 
 ### ② 主轴居中（缺 `justify`）→ **v0.4 已解决**
 
@@ -401,11 +401,11 @@ v0.4 之前同一界面内的组件只能顺序流排，表达不了「浮层盖
 
 | 类别 | 来源 | 用在哪 |
 |---|---|---|
-| **业务件**（新游戏不要用） | `packages/runtime/src/core/ui/builtin.ts` 的 `BUILTIN_COMPONENTS`，9 个 kuaidi 专用件（按代码顺序）：`primaryButton` `secondaryButton` `coinBadge` `statusText` `pause` `parcelGrid` `infoPanel` `card0` `card1` | 源头是《快递装车员》的业务语义（包裹格 / 金币角标 / 暂停键）；iaa-ui 模板默认也全部注册，但新界面优先用通用件。**`tapTarget` / `scorePanel` 不在这里** —— 它们是 `games/ui-demo/src/app/ui-registry.ts` 里的自定义件，新游戏里写会报「未知组件」 |
+| **业务件**（新游戏不要用） | `packages/runtime/src/core/ui/builtin.ts` 的 `BUILTIN_COMPONENTS`，9 个 kuaidi 专用件（按代码顺序）：`primaryButton` `secondaryButton` `coinBadge` `statusText` `pause` `parcelGrid` `infoPanel` `card0` `card1` | 源头是《快递装车员》的业务语义（包裹格 / 金币角标 / 暂停键）；iaa-ui 模板默认仅注册通用件；旧业务件需显式接入。**`tapTarget` / `scorePanel` 不在这里** —— 它们是 `games/ui-demo/src/app/ui-registry.ts` 里的自定义件，新游戏里写会报「未知组件」 |
 | **通用件**（推荐） | `packages/runtime/src/core/ui/widgets/`，`createWidgetRegistry()` 一次装 22 个（含 T31 新增的 `grid` / `scroll`、T34 新增的 `input`） | 任何新界面；颜色走 `DrawDeps.theme`，素材缺失回落纯色 |
 
-两者合计 **31 个**（iaa-ui 模板的 `createRegistry()` 就是这 31 个）；`games/ui-demo` 另加
-`tapTarget` / `scorePanel` 两个自定义件，合计 33 个。
+默认模板的 `createRegistry()` 与 `createWidgetRegistry()` 同源，只注册 `WIDGET_COMPONENTS`。
+兼容完整注册表 `createDefaultUiRegistry()` 另加 `BUILTIN_COMPONENTS`；实际名称和数量以这两个数组为准。
 
 ```ts
 import { createWidgetRegistry } from '…/packages/runtime/src/core/ui/widgets';

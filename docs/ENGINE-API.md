@@ -5,8 +5,8 @@
 > 规则：**一行一个导出**，只写「签名 + 行为 + 一行示例」，不写评价词。
 > 全部条目来自读代码（`packages/runtime/src/**`）；行为与代码不一致时以代码为准。
 >
-> **导入方式**：barrel `@mg/runtime` 尚未落地。现在从 `packages/runtime/src/...` 相对导入，
-> 现成例子见 `games/ui-demo/src/app/deps.ts`。
+> **导入方式**：游戏源码从 `@mg/runtime` 导入，并在游戏自己的 `deps.ts` 汇聚。
+> Vite/Vitest 配置由 Node 加载时可使用源码具体子模块；不要把这条例外扩散到游戏业务代码。
 
 ## core/ui —— 布局
 
@@ -122,7 +122,7 @@ expect(findOverlaps({ play, slotRow, pool, toolBar })).toEqual([]);
 
 ## core/ui/widgets —— 22 个通用组件
 
-`createWidgetRegistry() => ComponentRegistry`（一次装 22 个）、`WIDGET_COMPONENTS`。
+`createWidgetRegistry() => ComponentRegistry`（一次装 22 个）、`WIDGET_COMPONENTS`。默认模板仅注册通用件；`createDefaultUiRegistry()` 保留旧业务件兼容。
 
 | 组件 | 文件 | 一行说明 |
 |---|---|---|

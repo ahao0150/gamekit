@@ -5,6 +5,7 @@
  * 构建期注入 `virtual:mg-manifest`（只含真进包的文件）与 `virtual:mg-config`。
  */
 import { cpSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { dirname, join, relative, sep } from 'node:path';
 import type { Plugin } from 'vite';
 import { buildManifest, declaredSubpackages, manifestCode, outPathOf, pickAssets } from './assets';
@@ -81,6 +82,7 @@ export const mgPlugin = (options: MgPluginOptions): Plugin => {
      * 只对 web 生效：wx/tt 的 `mg dev` 走的是 `build --watch`，不需要 HTML。
      */
     configureServer(server) {
+      let invalidateAtlas: (() => void) | undefined;
       // 图集中间件先挂：`/__atlas/*` 与 HTML 无关，且 dev 与 build 走同一个 pack()
       if (resolved.atlas !== null) {
         const dev = createAtlasDevServer(() => {
@@ -89,15 +91,53 @@ export const mgPlugin = (options: MgPluginOptions): Plugin => {
           return result;
         });
         server.middlewares.use(dev.middleware);
-        // assets/ 变化 → 标脏 + 强制整页重载（canvas 已加载的纹理不会自己换）
-        server.watcher.add(resolved.assetsDir);
-        server.watcher.on('all', (_event, file) => {
-          if (!file.startsWith(resolved.assetsDir)) return;
-          atlas = null;
-          dev.invalidate();
-          server.ws.send({ type: 'full-reload' });
-        });
+        invalidateAtlas = () => dev.invalidate();
       }
+      // 资源清单在未启用图集时也必须更新；同时监听压缩资源覆盖目录。
+      server.watcher.add([resolved.assetsDir, resolved.packDir]);
+      server.watcher.on('all', (_event, file) => {
+        const path = norm(file);
+        const belongs = [resolved.assetsDir, resolved.packDir].some(dir => {
+          const base = norm(dir).replace(/\/$/, '');
+          return path === base || path.startsWith(`${base}/`);
+        });
+        if (!belongs) return;
+        try {
+          const picked = pickAssets(resolved);
+          assets = picked.assets;
+          for (const warning of picked.warnings) server.config.logger.warn(warning);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          server.config.logger.error(message);
+          server.ws.send({ type: 'error', err: { message, stack: '' } });
+          return;
+        }
+        atlas = null;
+        invalidateAtlas?.();
+        for (const id of [MANIFEST_RESOLVED, ATLAS_RESOLVED]) {
+          const module = server.moduleGraph.getModuleById(id);
+          if (module !== undefined) server.moduleGraph.invalidateModule(module);
+        }
+        server.ws.send({ type: 'full-reload' });
+      });
+      // 清单使用发布路径，dev必须从择优后的真实文件读取（含assets-pack及自定义assetsDir）。
+      server.middlewares.use((req, res, next) => {
+        let path: string;
+        try { path = decodeURIComponent((req.url ?? '/').split('?')[0] ?? '/'); }
+        catch { res.statusCode = 400; res.end('bad request'); return; }
+        const asset = assets.find(item => `/${outPathOf(item)}` === path);
+        if (asset === undefined) { next(); return; }
+        const ext = asset.rel.slice(asset.rel.lastIndexOf('.') + 1).toLowerCase();
+        const mime: Readonly<Record<string, string>> = {
+          png: 'image/png', webp: 'image/webp', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+          wav: 'audio/wav', mp3: 'audio/mpeg', json: 'application/json',
+        };
+        void readFile(asset.from).then(data => {
+          res.setHeader('content-type', mime[ext] ?? 'application/octet-stream');
+          res.setHeader('cache-control', 'no-store');
+          res.end(data);
+        }).catch(() => { res.statusCode = 404; res.end('not found'); });
+      });
       if (resolved.target !== 'web') return;
       const devEntry = relative(resolved.root, resolved.entry).split(sep).join('/');
       server.middlewares.use((req, res, next) => {

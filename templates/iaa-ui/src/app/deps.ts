@@ -3,12 +3,12 @@
  * 一律用 `@mg/runtime` 包名，不要写 packages/runtime 相对路径。
  */
 
-export { createLoop } from '@mg/runtime';
+export { createLoop, createWidgetRegistry } from '@mg/runtime';
 
 // `.ui` 界面链：解析（构建期）→ 绑定 measure → 布局 → 命中
 export { bindComponents, layout, pickHit, resolveUiData } from '@mg/runtime';
 
-// 组件注册表：内置 9 个业务件 + 22 个通用组件 = 31 个（见 ui-registry.ts）
+// 通用组件来自 WIDGET_COMPONENTS；旧业务件仅用于兼容既有游戏。
 export {
   createBuiltinRegistry,
   createComponentRegistry,

@@ -1,23 +1,34 @@
 /**
- * 资源管线：照搬老 build.js，不交给 Vite。顺序：assets-pack 顶替 → 同名 png/webp 取较小
+ * 资源管线：照搬老 build.js，不交给 Vite。顺序：assets-pack 顶替 → 同名 PNG/WebP/JPEG 取较小
  * → 0 字节跳过 → png 比 webp 小告警 → 清单只登记真进包的文件 → 分包按前缀、空分包不声明。
  */
 import { join } from 'node:path';
 import { listFiles } from './report';
 import type { AssetFile, MgManifest, MgSubpackages, ResolvedOptions } from './types';
-const MEDIA_RE = /\.(png|webp|wav|mp3|json)$/i;
-const IMAGE_RE = /\.(png|webp)$/i;
+const MEDIA_RE = /\.(png|webp|jpe?g|wav|mp3|json)$/i;
+const IMAGE_RE = /\.(png|webp|jpe?g)$/i;
+/** 容易被误认为能直接进包的媒体；说明、配表源文件仍允许留在资源目录。 */
+const UNSUPPORTED_MEDIA_RE = /\.(svg|gif|avif|bmp|tiff?|ico|psd|mp4|webm|ogg|m4a|aac|flac|ttf|otf|woff2?|glb|gltf)$/i;
 interface RawFile {
   readonly rel: string;
   readonly from: string;
   readonly bytes: number;
 }
 /** 递归收集；目录不存在返回空（assets/ 允许缺失）。 */
-export const walkAssets = (dir: string): RawFile[] =>
-  listFiles(dir)
+export const walkAssets = (dir: string): RawFile[] => {
+  const files = listFiles(dir);
+  const unsupported = files.filter(file => UNSUPPORTED_MEDIA_RE.test(file.relative));
+  if (unsupported.length > 0) {
+    throw new Error(
+      `[mg assets] 不支持的媒体文件：${unsupported.map(f => join(dir, f.relative)).join(' / ')}。` +
+      '图片请转换为 PNG、WebP 或 JPEG；音频请转换为 WAV 或 MP3；原稿请移至 artifacts/。',
+    );
+  }
+  return files
     .filter((file) => MEDIA_RE.test(file.relative))
     .sort((a, b) => a.relative.localeCompare(b.relative))
     .map((file) => ({ rel: file.relative, from: join(dir, file.relative), bytes: file.bytes }));
+};
 const extOf = (rel: string): string =>
   rel.includes('.') ? rel.slice(rel.lastIndexOf('.') + 1).toLowerCase() : '';
 /** 去掉扩展名的 base，用于「同名不同格式」分组。 */
@@ -65,7 +76,11 @@ export const pickAssets = (options: ResolvedOptions): PickResult => {
       warnings.push(`跳过 0 字节文件：${file.rel}`);
       continue;
     }
-    const prev = best.get(keyOf(file.rel));
+    const key = keyOf(file.rel);
+    const prev = best.get(key);
+    if (prev !== undefined && IMAGE_RE.test(prev.rel) !== IMAGE_RE.test(file.rel)) {
+      throw new Error(`[mg assets] 清单键 '${key}' 冲突：${prev.rel} / ${file.rel}。图片与音频请使用不同路径或名称。`);
+    }
     if (prev === undefined || file.bytes < prev.bytes) best.set(keyOf(file.rel), file);
   }
   // 安全阀：png 比 webp 还小说明两份内容可能不同版，静默打旧图会穿帮

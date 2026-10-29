@@ -40,6 +40,8 @@ export const runBuild: CommandRunner = async (argv, ctx) => {
     ctx.stdout(`[mg build] ${target} …`);
     try {
       await viteBuild({
+        // Vite在插件config钩子前定位配置文件，必须提前指定项目根。
+        root,
         plugins: [
           mgPlugin({
             target,

@@ -17,7 +17,7 @@
 
 新玩法先走 [`GAME-PLANNER.md`](GAME-PLANNER.md)：
 
-1. 拷贝 [`templates/game-planner/`](templates/game-planner/) → `games/<name>/design/`（可先建目录再 `mg create`）。
+1. 拷贝 [`templates/game-planner/`](templates/game-planner/) 到仓库根 `artifacts/planning/<name>/` 起草；`mg create` 成功后再移入 `games/<name>/design/`，不能预先创建目标目录。
 2. **默认轻量**：填完 `00_concept` + `01_top_design` → 写出 `PRD.md` / `ART-BRIEF.md`。
 3. **完整模式**（养成/双循环等）再跑 Architecture / Systems，并按需接 economy TSV、story.tsv。
 4. `HANDOFF.md` 门禁勾完再进入下面的「创建游戏」。
@@ -34,7 +34,7 @@ pnpm mg -- create my-game --template iaa-simple
 ```
 
 `--template` 就是 `templates/` 下的目录名，新增模板不用改 CLI。**iaa-ui**（默认）界面写在
-`ui/home.ui`、组件走注册表（**31 个现成件 = 9 个内置业务件 + 22 个通用组件**）、命中用 `pickHit`，开箱 **暖木纹** 皮肤（另有清爽玻璃，见模板 `docs/SKINS.md`）；
+`ui/home.ui`、组件走通用注册表（来源为 `WIDGET_COMPONENTS`）、命中用 `pickHit`，开箱 **暖木纹** 皮肤（另有清爽玻璃，见模板 `docs/SKINS.md`）；
 **iaa-simple** 是手写 `computeLayout`，没有 `vite.config.ts` / `ui-registry.ts` / `ui/` ——
 选它还想用 `.ui` 就得照本文 §3–§6 手工补一遍。
 
@@ -53,46 +53,31 @@ pnpm mg -- create my-game --template iaa-simple
 }
 ```
 
-`fit` 取 `contain` / `fill` / `height`（模板默认 `contain`）。`design` 与 `fit` 走 `virtual:mg-config`，
+`fit` 取 `contain` / `fill` / `height`（模板默认 `fill`）。`design` 与 `fit` 走 `virtual:mg-config`，
 是**唯一真源** —— `main.ts` 不用再写一遍；改完跑一次 `build --all` 确认还是绿的。
 
-## 3. 组件注册表：**iaa-ui 已自带（不用动）；iaa-simple 没有，必须自建**
+## 3. 组件注册表：默认使用通用件，旧业务件按需显式接入
 
-**用 iaa-ui 模板的话这一节可以直接跳过** —— 它的 `src/app/ui-registry.ts` 已经写好，而且已经
-遍历注册了 `WIDGET_COMPONENTS`（`createRegistry()` 出来是 **31 个组件**：9 个内置业务件 + 22 个通用件）。
-`vite.config.ts` 与运行时 `bindComponents` 都从这一个工厂取，不用你操心。
+`iaa-ui` 已自带运行时注册表及构建/测试配置。三处均使用 `createWidgetRegistry()`，
+组件名称与数量来自 `packages/runtime/src/core/ui/widgets/index.ts` 的 `WIDGET_COMPONENTS`，
+不要在测试或文档中复制一个固定总数。
 
-只有 `iaa-simple`（或想从零搭）才需要新建 `src/app/ui-registry.ts`：
+新工程的 `src/app/ui-registry.ts`：
 
 ```ts
-import { createBuiltinRegistry, WIDGET_COMPONENTS } from '@mg/runtime';
-import type { ComponentRegistry } from '@mg/runtime';
-
-/** 构建期（vite.config.ts）与运行时（bindComponents）必须是同一份。 */
-export const createRegistry = (): ComponentRegistry => {
-  const registry = createBuiltinRegistry();
-  for (const comp of WIDGET_COMPONENTS) registry.register(comp);
-  return registry;
-};
+import { createWidgetRegistry } from './deps';
+import type { ComponentRegistry } from './deps';
+export const createRegistry = (): ComponentRegistry => createWidgetRegistry();
 ```
 
-**`createBuiltinRegistry()` 只给 9 个内置业务件**（`packages/runtime/src/core/ui/builtin.ts` 的
-`BUILTIN_COMPONENTS`）：`primaryButton` / `secondaryButton` / `coinBadge` / `statusText` /
-`pause` / `parcelGrid` / `infoPanel` / `card0` / `card1`。
-要用通用组件（`progress` / `panel` / `label` / `button` / `input` / `list` / `grid` / `scroll` /
-`slider` / `tabs` / `segmented` / `keypad` / `carousel` / `scrollbar` / `toast` / `switch` /
-`checkbox` / `radio` / `divider` / `badge` / `icon` / `avatar` 共 **22 个**，其中 `input` / `grid` /
-`scroll` 是 T31/T34 新增的），**必须像上面那样遍历注册 `WIDGET_COMPONENTS`**，否则构建直接失败：
+`deps.ts` 从 `@mg/runtime` 转出工厂。游戏源码统一走 `deps.ts`；构建期配置使用
+`packages/runtime/src/core/ui/widgets/index` 的具体子模块，避免 Node 原生加载 barrel 的问题。
+自定义组件必须在构建、测试与运行时共用同一份声明，见 [GAME-WORKFLOW.md](GAME-WORKFLOW.md) §2.2。
 
-```
-ui/home.ui:17: 未知组件 'progress'，已注册的有：primaryButton / secondaryButton / coinBadge /
-statusText / pause / parcelGrid / infoPanel / card0 / card1
-```
-
-> `.ui` 里 `put` 的第一个词是**组件名**，不能自造；一个界面里同名组件只能出现一次（`rects` 以名为键），
-> 需要两个按钮就注册两个名字。
-> `tapTarget` / `scorePanel` 是 `games/ui-demo` 的**自定义件**，不在内置 9 个里 —— 新游戏里写它们会报
-> 「未知组件」。
+`createBuiltinRegistry()` 与 `createDefaultUiRegistry()` 仍保留，供既有游戏兼容旧业务件。
+默认模板不再混入 `parcelGrid`、`coinBadge`、`statusText` 等专用业务组件；
+当前示例提示文案使用通用 `toast`。需要多个同类按钮时注册不同名称的组件别名，
+编译期与运行时一起注册，不能仅在 `.ui` 中自造名字。
 
 ## 4. 写界面 `ui/home.ui`
 
@@ -128,10 +113,10 @@ web / 老基础库是 `undefined`（走零偏移）；**微信开发者工具里
 ```ts
 import { defineConfig } from 'vite';
 import { optionsFromRegistry, uiPlugin } from '../../packages/ui-plugin/src/index';
-import { createRegistry } from './src/app/ui-registry';
+import { createWidgetRegistry } from '../../packages/runtime/src/core/ui/widgets/index';
 
 export default defineConfig({
-  plugins: [uiPlugin(optionsFromRegistry(createRegistry()))],
+  plugins: [uiPlugin(optionsFromRegistry(createWidgetRegistry()))],
 });
 ```
 
@@ -147,7 +132,7 @@ mg build: web 构建失败：Build failed with 1 error:
 
 ```ts
 declare module '*.ui' {
-  import type { LayoutSpec } from '../../../packages/runtime/src/core/ui/layout';
+  import type { LayoutSpec } from '@mg/runtime';
   const ui: {
     readonly name: string;
     readonly spec: LayoutSpec;
@@ -160,7 +145,7 @@ declare module '*.ui' {
 ```
 
 不加报 `error TS2307: Cannot find module '../ui/home.ui' or its corresponding type declarations.`
-**`mg build` 不做类型检查**，所以「构建绿 + tsc 红」是正常组合，别被构建成功骗了。
+`mg build` 默认先跑类型检查；只有显式传 `--skip-typecheck` 才会跳过。
 
 ## 7. 接进布局与绘制
 
@@ -171,16 +156,17 @@ import { bindComponents, layout } from './deps';
 import homeUi from '../../ui/home.ui';
 import { createRegistry } from './ui-registry';
 
-const registry = createRegistry(); // 挂在 engine 实例上，别做模块级单例
-
-export const createLayoutEngine = () => ({
-  registry,
-  compute(viewport: { width: number; height: number }) {
-    const bound = bindComponents(homeUi.spec, { registry, env: { viewport, data: {} } });
-    const solved = layout(bound.spec, viewport);
-    return { rects: solved.rects, paintOrder: solved.paintOrder, meta: solved.meta, errors: [...bound.errors, ...solved.errors] };
-  },
-});
+export const createLayoutEngine = () => {
+  const registry = createRegistry(); // 每个 engine 一份
+  return {
+    registry,
+    compute(viewport: { width: number; height: number }) {
+      const bound = bindComponents(homeUi.spec, { registry, env: { viewport, data: {} } });
+      const solved = layout(bound.spec, viewport);
+      return { rects: solved.rects, paintOrder: solved.paintOrder, meta: solved.meta, errors: [...bound.errors, ...solved.errors] };
+    },
+  };
+};
 ```
 
 `src/app/render.ts` 按 **`paintOrder` 正序**画，命中用 **`pickHit`**（逆序、block 吃掉）：
@@ -357,3 +343,13 @@ node ../../packages/cli/bin/mg.mjs build --all
 9. **数据组件优先单通道**：把 data 传给 `layout.compute(..., data)`，它会挂在 `ScreenLayout.data` 上，
    绘制期自动注入 `DrawDeps.data`。若仍分两边传，漏键会走 `resolveUiData` 报错。
    详见 `docs/ui-syntax.md` §12。
+
+## 资源与平台验收补充
+
+图片支持 PNG/WebP/JPEG，音频支持 WAV/MP3，JSON 保留扩展名作为清单键；
+同名不同图片格式择优，`assets-pack/` 的同名图片优先覆盖。未支持的媒体会阻止构建并给出文件路径，
+图片与音频不能共享同一个去扩展名后的清单键。资源增删与压缩覆盖在 dev 中也会刷新清单。
+详见 [PLATFORM-ACCEPTANCE.md](PLATFORM-ACCEPTANCE.md)。
+
+仓库环境检查用 `pnpm run doctor`（`pnpm doctor` 可能调用 pnpm 自带命令）；
+具体游戏检查用 `pnpm mg -- doctor --root games/<name>`。构建通过不等于宿主验收通过。

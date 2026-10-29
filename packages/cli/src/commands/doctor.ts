@@ -5,9 +5,9 @@
 
 import { existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
-import { join } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 import { parseArgs, stringFlag } from '../args';
-import { findWorkspaceRoot } from '../shared';
+import { findWorkspaceRoot, readGameConfig } from '../shared';
 import type { CliContext, CommandRunner } from '../shared';
 
 /** 与根 package.json engines.node 对齐。 */
@@ -112,23 +112,20 @@ export const collectChecks = (root: string, pnpmVersion: string | null = detectP
       : { level: 'warn', message: '默认模板 templates/iaa-ui 不存在', hint: 'mg create 默认用它' },
   );
 
-  const built = TARGET_DIRS.filter((target) => existsSync(join(root, 'build', target)));
-  checks.push(
-    built.length === TARGET_DIRS.length
-      ? { level: 'ok', message: '三端产物目录齐全（build/web · wx · tt）' }
-      : {
-          level: 'warn',
-          message: `产物目录：${built.length === 0 ? '尚未构建' : `已有 ${built.join(' / ')}`}`,
-          hint: 'pnpm mg -- build --all',
-        },
-  );
+  return checks;
+};
 
-  checks.push(
-    existsSync(join(root, 'game.config.json'))
-      ? { level: 'ok', message: '项目配置 game.config.json 存在' }
-      : { level: 'warn', message: '未找到 game.config.json', hint: 'build/dev 需要 design 分辨率' },
-  );
-
+/** 项目检查与仓库环境检查分开，避免在仓库根误报游戏配置和产物缺失。 */
+export const collectProjectChecks = (project: string): DoctorCheck[] => {
+  const config = readGameConfig(project);
+  const checks: DoctorCheck[] = [];
+  checks.push(config?.design !== undefined
+    ? { level: 'ok', message: '项目配置有效（design 分辨率已设置）' }
+    : { level: 'error', message: `项目配置缺失或无效：${project}`, hint: '设置 game.config.json（或 package.json 的 mg 字段）中的 design.width / height' });
+  const built = TARGET_DIRS.filter(target => existsSync(join(project, 'build', target, 'game.js')));
+  checks.push(built.length === TARGET_DIRS.length
+    ? { level: 'ok', message: '三端构建入口齐全（build/web · wx · tt）；包体与配置请继续运行 mg check' }
+    : { level: 'warn', message: `项目产物：${built.length === 0 ? '尚未构建' : `已有 ${built.join(' / ')}`}`, hint: '在项目目录执行 pnpm build，或 mg build --root <项目路径> --all' });
   return checks;
 };
 
@@ -146,10 +143,19 @@ export const exitCodeOf = (checks: readonly DoctorCheck[]): number =>
 
 export const runDoctor: CommandRunner = async (argv, ctx) => {
   const parsed = parseArgs(argv);
-  const root = findWorkspaceRoot(stringFlag(parsed, 'root') ?? ctx.cwd);
+  const project = resolve(ctx.cwd, stringFlag(parsed, 'root') ?? '.');
+  const root = findWorkspaceRoot(project);
   ctx.stdout(`mg doctor: 仓库根 ${root}`);
 
   const checks = collectChecks(root);
+  const underGames = relative(root, project).split(sep)[0] === 'games';
+  const explicitProject = stringFlag(parsed, 'root') !== undefined && project !== root;
+  if (underGames || explicitProject || readGameConfig(project) !== null) {
+    ctx.stdout(`mg doctor: 游戏项目 ${project}`);
+    checks.push(...collectProjectChecks(project));
+  } else {
+    ctx.stdout('仓库级体检；检查游戏请使用 mg doctor --root games/<name>');
+  }
   printChecks(ctx, checks);
   const errors = checks.filter((check) => check.level === 'error').length;
   ctx.stdout(errors === 0 ? '✔ 体检通过' : `✘ 体检发现 ${errors} 个错误`);
